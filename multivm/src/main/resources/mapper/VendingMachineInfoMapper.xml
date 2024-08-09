@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.VendingMachineInfoMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.VendingMachineInfo" id="VendingMachineInfoModel" autoMapping="true">
+		<result property="vmSeq" column="VM_SEQ"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="organizationName" column="ORGANIZATION_NAME"/>
+		<result property="vmId" column="VM_ID"/>
+		<result property="terminalId" column="TERMINAL_ID"/>
+		<result property="place" column="PLACE"/>
+		<result property="useTemper" column="USE_TEMPER"/>
+		<result property="setTemper" column="SET_TEMPER"/>
+		<result property="led" column="LED"/>
+		<result property="antiFog" column="ANTI_FOG"/>
+		<result property="tel" column="TEL"/>
+		<result property="updateDate" column="UPDATE_DATE"/>
+		<result property="actionData" column="ACTION_DATA"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+	</resultMap>
+
+	<select id="getVMInfo" parameterType="int" resultMap="VendingMachineInfoModel">
+		SELECT vm.VM_ID,vm.PLACE, org.NAME AS ORGANIZATION_NAME,vmi.*
+		FROM TB_VENDING_MACHINE vm
+		INNER JOIN TB_VENDING_MACHINE_INFO vmi on vm.SEQ = vmi.VM_SEQ
+		INNER JOIN TB_ORGANIZATION org on vm.ORGANIZATION_SEQ = org.SEQ
+		WHERE 1=1
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND vmi.VM_SEQ = #{vmSeq}
+		</if>
+		ORDER BY vmi.UPDATE_DATE DESC LIMIT 1
+	</select>
+	<select id="getVMInfoList" parameterType="java.util.Map" resultMap="VendingMachineInfoModel">
+		SELECT vm.VM_ID,vm.PLACE, org.NAME AS ORGANIZATION_NAME,vmi.*
+		FROM TB_VENDING_MACHINE vm
+		INNER JOIN TB_VENDING_MACHINE_INFO vmi on vm.SEQ = vmi.VM_SEQ
+		INNER JOIN TB_ORGANIZATION org on vm.ORGANIZATION_SEQ = org.SEQ
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+		AND vm.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND vm.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('')">
+			AND vm.VM_ID = #{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('')">
+			AND vm.TERMINAL_ID = #{terminalId}
+		</if>
+		<if test="place!=null and !place.equals('')">
+			AND vm.PLACE = #{place}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('')">
+			AND vm.USER_SEQ = #{userSeq}
+		</if>
+		ORDER BY vmi.UPDATE_DATE DESC, ORGANIZATION_NAME, vm.PLACE
+	</select>
+
+	<insert id="insertVMInfo" parameterType="kr.co.ubcn.multivm.model.VendingMachineInfo">
+		INSERT INTO TB_VENDING_MACHINE_INFO
+			(VM_SEQ, USE_TEMPER, SET_TEMPER, LED, ANTI_FOG, TEL, UPDATE_DATE)
+			VALUE (#{vmSeq},#{useTemper},#{setTemper},#{led},#{antiFog},#{tel},now())
+	</insert>
+
+	<insert id="insertVMInfo_v2" parameterType="String">
+		INSERT INTO TB_VENDING_MACHINE_INFO (VM_SEQ)
+		SELECT SEQ FROM TB_VENDING_MACHINE WHERE VM_ID =  #{vmId}
+	</insert>
+
+	<update id="updateVMActionData" parameterType="kr.co.ubcn.multivm.model.VendingMachineInfo">
+		UPDATE TB_VENDING_MACHINE_INFO
+		SET
+			ACTION_DATA=#{actionData}
+		  ,MODIFY_DATE=now()
+		WHERE VM_SEQ = #{vmSeq}
+	</update>
+
+	<!--<delete id="deleteVM" parameterType="int">
+		DELETE FROM TB_VENDING_MACHINE
+		WHERE SEQ = #{seq}
+	</delete>-->
+	<delete id="deleteVMInfoList_v2" parameterType="java.util.Map">
+		DELETE FROM TB_VENDING_MACHINE_INFO
+		WHERE 1=1
+		AND VM_SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+
+
+
+</mapper>
+

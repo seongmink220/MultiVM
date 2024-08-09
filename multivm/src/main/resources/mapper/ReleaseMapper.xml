@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.ReleaseMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.Release" id="ReleaseModel" autoMapping="true">
+		<result property="seq" column="SEQ"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="vmSeq" column="VM_SEQ"/>
+		<result property="productSeq" column="PRODUCT_SEQ"/>
+		<result property="releaseDate" column="RELEASE_DATE"/>
+		<result property="releaseTime" column="RELEASE_TIME"/>
+		<result property="productCount" column="COUNT"/>
+		<result property="slotNo" column="COL"/>
+		<result property="releaseType" column="RELEASE_TYPE"/>
+
+		<result property="vmId" column="VM_ID"/>
+		<result property="terminalId" column="TERMINAL_ID"/>
+		<result property="productName" column="PRODUCT_NAME"/>
+		<result property="productCode" column="PRODUCT_CODE"/>
+		<result property="sDate" column="START_DATE"/>
+		<result property="eDate" column="END_DATE"/>
+
+
+	</resultMap>
+
+	<insert id="insertRelease" parameterType="kr.co.ubcn.multivm.model.Release">
+		INSERT INTO TB_RELEASE
+		(SEQ,COMPANY_SEQ, ORGANIZATION_SEQ, VM_SEQ, PRODUCT_SEQ, RELEASE_DATE, RELEASE_TIME, COUNT, COL, RELEASE_TYPE)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{companySeq},#{organizationSeq},#{vmSeq}
+		     ,#{productSeq},DATE_FORMAT(now(),'%Y%m%d'),DATE_FORMAT(now(),'%H%i%s'),#{editCount} - #{productCount},#{slotNo},'M' from TB_RELEASE
+	</insert>
+
+	<select id="getReleaseList" parameterType="java.util.Map" resultMap="ReleaseModel">
+		SELECT
+		DATE_FORMAT(STR_TO_DATE(r.RELEASE_DATE,'%Y%m%d'),'%Y.%m.%d') AS RELEASE_DATE
+		,CONCAT(LEFT(r.RELEASE_TIME,2),':',MID(r.RELEASE_TIME,3,2),':',RIGHT(r.RELEASE_TIME,2)) AS RELEASE_TIME
+		,vm.VM_ID, vm.TERMINAL_ID
+		,IFNULL(p.NAME,'') AS PRODUCT_NAME, IFNULL(p.CODE,'') AS PRODUCT_CODE
+		,CASE WHEN r.RELEASE_TYPE='R' THEN '출고'
+		    WHEN r.RELEASE_TYPE='S' THEN '판매'
+			WHEN r.RELEASE_TYPE='F' THEN '미투출'
+			WHEN r.RELEASE_TYPE='M' THEN '재고보정' END AS RELEASE_TYPE
+		,r.COUNT,r.COL
+		FROM TB_RELEASE r
+		INNER JOIN TB_VENDING_MACHINE vm ON vm.SEQ = r.VM_SEQ AND vm.VISIBLE = 'Y'
+		<if test="auth==4">
+			AND vm.USER_SEQ = #{userSeq}
+		</if>
+		LEFT JOIN TB_PRODUCT p ON r.PRODUCT_SEQ = p.SEQ AND r.COMPANY_SEQ = p.COMPANY_SEQ
+		WHERE r.COMPANY_SEQ = #{companySeq}
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND r.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		AND r.RELEASE_DATE BETWEEN #{sDate} AND #{eDate}
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+			AND vm.VM_ID =#{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('') and !terminalId.equals('전체')">
+			AND vm.TERMINAL_ID = #{terminalId}
+		</if>
+		<if test="searchType!=null and !searchType.equals('') and searchType.equalsIgnoreCase('1')">
+			AND p.NAME like CONCAT('%' ,IFNULL(#{searchValue},'') , '%')
+		</if>
+		<if test="searchType!=null and !searchType.equals('') and searchType.equalsIgnoreCase('2')">
+			AND p.CODE like CONCAT('%' ,IFNULL(#{searchValue},'') , '%')
+		</if>
+		<if test="searchType!=null and !searchType.equals('') and searchType.equalsIgnoreCase('3')">
+			AND r.COL = #{searchValue}
+		</if>
+		ORDER BY r.RELEASE_DATE DESC,r.RELEASE_TIME DESC, vm.VM_ID, vm.TERMINAL_ID
+	</select>
+
+	<delete id="deleteReleaseList" parameterType="int">
+		DELETE FROM TB_RELEASE
+		WHERE PRODUCT_SEQ = #{productSeq}
+	</delete>
+	<delete id="deleteReleaseList_v1" parameterType="java.util.Map">
+		DELETE FROM TB_RELEASE
+		WHERE PRODUCT_SEQ = (SELECT SEQ from TB_PRODUCT
+								WHERE COMPANY_SEQ = #{companySeq}
+								AND ORGANIZATION_SEQ = #{organizationSeq}
+								AND CODE = #{productCode2})
+		<if test="vmSeq!=null and !vmSeq.equals('')">
+		AND VM_SEQ = #{vmSeq}
+		</if>
+	</delete>
+	<delete id="deleteReleaseList_v2" parameterType="java.util.Map">
+		DELETE FROM TB_RELEASE
+		WHERE 1=1
+		AND VM_SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+
+
+
+</mapper>

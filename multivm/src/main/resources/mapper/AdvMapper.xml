@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.AdvMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.Adv" id="AdvModel" autoMapping="true">
+		<result property="seq" column="SEQ"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="advTitle" column="ADV_TITLE"/>
+		<result property="advContent" column="ADV_CONTENT"/>
+		<result property="advOwner" column="ADV_OWNER"/>
+		<result property="advFile" column="ADV_FILE"/>
+		<result property="advType" column="ADV_TYPE"/>
+		<result property="originFile" column="ORIGIN_FILE"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+		<result property="modifyUserSeq" column="MODIFY_USER_SEQ"/>
+		<result property="organizationName" column="ORGANIZATION_NANE"/>
+		<result property="companyName" column="COMPANY_NAME"/>
+		<result property="vmId" column="VM_ID"/>
+	</resultMap>
+
+	<resultMap type="kr.co.ubcn.multivm.model.VendingMachineAdv" id="VendingMachineAdvModel" autoMapping="true">
+		<result property="vmSeq" column="VM_SEQ"/>
+		<result property="advSeq" column="ADV_SEQ"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+		<result property="modifyUserSeq" column="MODIFY_USER_SEQ"/>
+		<result property="organizationName" column="ORGANIZATION_NANE"/>
+		<result property="companyName" column="COMPANY_NAME"/>
+		<result property="vmId" column="VM_ID"/>
+		<result property="advTitle" column="ADV_TITLE"/>
+		<result property="advOwner" column="ADV_OWNER"/>
+		<result property="advFile" column="ADV_FILE"/>
+		<result property="advType" column="ADV_TYPE"/>
+		<result property="originFile" column="ORIGIN_FILE"/>
+		<result property="place" column="PLACE"/>
+
+	</resultMap>
+
+	<select id="getAdvInfo" parameterType="Integer" resultMap="AdvModel">
+		SELECT AD.*, ORG.NAME AS ORGANIZATION_NANE, COM.NAME AS COMPANY_NAME
+		FROM TB_ADV AD
+		INNER JOIN TB_ORGANIZATION ORG
+		ON AD.ORGANIZATION_SEQ = ORG.SEQ
+		INNER JOIN TB_COMPANY COM
+		ON AD.COMPANY_SEQ = COM.SEQ
+		WHERE AD.SEQ = #{seq}
+		AND ORG.VISIBLE = 'Y'
+	</select>
+	<select id="getSearchAdvList" parameterType="java.util.Map" resultMap="AdvModel">
+		SELECT AD.*, ORG.NAME AS ORGANIZATION_NANE
+		FROM TB_ADV AD
+		INNER JOIN TB_ORGANIZATION ORG
+		ON AD.ORGANIZATION_SEQ = ORG.SEQ
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+			AND AD.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="seq!=null and !seq.equals('') and seq!=0">
+			AND AD.SEQ = #{seq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND AD.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND AD.ORGANIZATION_SEQ = (SELECT ORGANIZATION_SEQ FROM TB_VENDING_MACHINE WHERE SEQ = #{vmSeq})
+		</if>
+		<if test="advSeq!=null and !advSeq.equals('') and advSeq!=0">
+			AND AD.SEQ = #{advSeq}
+		</if>
+		AND ORG.VISIBLE = 'Y'
+		ORDER BY AD.SEQ DESC
+	</select>
+
+	<select id="getVMAdvList" parameterType="java.util.Map" resultMap="AdvModel">
+		SELECT AD.*, ORG.NAME AS ORGANIZATION_NANE
+		FROM TB_ADV AD
+		INNER JOIN TB_VENDING_MACHINE_ADV VMAD
+		ON VMAD.ADV_SEQ = AD.SEQ
+		INNER JOIN TB_VENDING_MACHINE VM
+		ON VM.SEQ = VMAD.VM_SEQ AND VM.VISIBLE = 'Y'
+		INNER JOIN TB_ORGANIZATION ORG
+		ON VM.ORGANIZATION_SEQ = ORG.SEQ AND ORG.VISIBLE = 'Y'
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+			AND AD.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="advSeq!=null and !advSeq.equals('') and advSeq!=0">
+			AND AD.SEQ = #{advSeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND AD.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND AD.ORGANIZATION_SEQ =(SELECT ORGANIZATION_SEQ FROM TB_VENDING_MACHINE WHERE SEQ = #{vmSeq})
+		</if>
+		<if test="vmSeq2!=null and !vmSeq2.equals('') and vmSeq2!=0">
+			AND VMAD.VM_SEQ = #{vmSeq2}
+		</if>
+		ORDER BY ORGANIZATION_NANE, VM_ID, AD.SEQ DESC
+	</select>
+
+	<insert id="insertAdv" parameterType="kr.co.ubcn.multivm.model.Adv">
+		INSERT INTO TB_ADV
+		(SEQ, COMPANY_SEQ, ORGANIZATION_SEQ, ADV_TITLE, ADV_CONTENT, ADV_OWNER, ADV_FILE, ADV_TYPE,ORIGIN_FILE, CREATE_DATE, CREATE_USER_SEQ, MODIFY_DATE)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{companySeq},#{organizationSeq},#{advTitle},#{advContent},#{advOwner},#{advFile},#{advType},#{originFile},now(), #{createUserSeq},now() from TB_ADV
+	</insert>
+
+	<update id="modifyAdv" parameterType="kr.co.ubcn.multivm.model.Adv">
+		UPDATE TB_ADV
+		SET ADV_TITLE=#{advTitle}, ADV_CONTENT=#{advContent}, ADV_OWNER=#{advOwner}, ADV_FILE=#{advFile}, ADV_TYPE=#{advType}, ORIGIN_FILE=#{originFile}
+		  , MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{seq}
+	</update>
+
+	<insert id="insertVMAdv" parameterType="kr.co.ubcn.multivm.model.VendingMachineAdv">
+		INSERT INTO TB_VENDING_MACHINE_ADV
+		(VM_SEQ, ADV_SEQ, CREATE_DATE, CREATE_USER_SEQ,MODIFY_DATE)
+		VALUE(#{vmSeq},#{advSeq},now(), #{createUserSeq}, now())
+	</insert>
+	<insert id="insertVMAdv_v2" parameterType="java.util.List">
+		INSERT INTO TB_VENDING_MACHINE_ADV
+			(VM_SEQ, ADV_SEQ, CREATE_DATE, CREATE_USER_SEQ,MODIFY_DATE) VALUES
+		<foreach collection="list" item="type" separator=",">
+			(#{type.vmSeq},#{type.advSeq}, now(), #{type.createUserSeq}, now())
+		</foreach>
+	</insert>
+	<delete id="deleteVMAdv" parameterType="kr.co.ubcn.multivm.model.VendingMachineAdv">
+		DELETE FROM TB_VENDING_MACHINE_ADV
+		WHERE VM_SEQ = #{vmSeq} AND ADV_SEQ = #{advSeq}
+	</delete>
+	<insert id="F_v2" parameterType="java.util.Map">
+		INSERT INTO TB_VENDING_MACHINE_ADV
+		(VM_SEQ, ADV_SEQ, CREATE_DATE, CREATE_USER_SEQ, MODIFY_DATE)
+		VALUE
+		<foreach item="item" index="index" collection="list" separator=",">
+		    (#{item.vmSeq},#{item.advSeq}, now(), #{item.createUserSeq}, now())
+		</foreach>
+	</insert>
+
+	<delete id="deleteAdvFromVM" parameterType="java.util.Map">
+		DELETE FROM TB_VENDING_MACHINE_ADV
+		WHERE 1=1
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+		AND VM_SEQ = #{vmSeq}
+		</if>
+		AND ADV_SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+
+	<delete id="deleteVMFromAdv" parameterType="java.util.Map">
+		DELETE FROM TB_VENDING_MACHINE_ADV
+		WHERE 1=1
+		<if test="advSeq!=null and !advSeq.equals('') and advSeq!=0">
+		AND ADV_SEQ = #{advSeq}
+		</if>
+		AND VM_SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+	<delete id="deleteAdv" parameterType="java.util.Map">
+		DELETE FROM TB_ADV
+		WHERE SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+	<select id="checkDupAdv" parameterType="kr.co.ubcn.multivm.model.VendingMachineAdv" resultMap="AdvModel">
+		SELECT *
+		FROM TB_VENDING_MACHINE_ADV
+		WHERE VM_SEQ = #{vmSeq} AND ADV_SEQ = #{advSeq}
+	</select>
+
+	<select id="checkUseAdvFile" parameterType="int" resultType="String">
+		<![CDATA[
+		SELECT ADV_FILE FROM TB_ADV
+		WHERE ADV_FILE = (SELECT ADV_FILE FROM TB_ADV
+		WHERE SEQ = #{advSeq})
+		AND seq <> #{advSeq}
+		]]>
+	</select>
+
+
+
+	<!--<select id="getVMAdvList2" parameterType="java.util.Map" resultMap="VendingMachineAdvModel">
+		SELECT VM.SEQ AS VM_SEQ, AD.SEQ AS ADV_SEQ,VMAD.CREATE_DATE
+		,ORG.NAME AS ORGANIZATION_NANE,COM.NAME AS COMPANY_NAME, VM.VM_ID,VM.PLACE, AD.ADV_TITLE,AD.ADV_OWNER,AD.ADV_FILE
+		FROM TB_VENDING_MACHINE VM
+		INNER JOIN TB_ORGANIZATION ORG
+		ON VM.ORGANIZATION_SEQ = ORG.SEQ
+		INNER JOIN TB_COMPANY COM
+		ON VM.COMPANY_SEQ = COM.SEQ
+		LEFT JOIN TB_VENDING_MACHINE_ADV VMAD
+		ON VM.SEQ = VMAD.VM_SEQ
+		LEFT JOIN TB_ADV AD
+		ON VMAD.ADV_SEQ = AD.SEQ
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+			AND AD.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="advSeq!=null and !advSeq.equals('') and advSeq!=0">
+			AND AD.SEQ = #{advSeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND AD.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND AD.ORGANIZATION_SEQ =(SELECT ORGANIZATION_SEQ FROM TB_VENDING_MACHINE WHERE SEQ = #{vmSeq})
+		</if>
+		<if test="vmSeq2!=null and !vmSeq2.equals('') and vmSeq2!=0">
+			AND VM.SEQ = #{vmSeq2}
+		</if>
+		ORDER BY ORGANIZATION_NANE, VM_ID, AD.SEQ
+	</select>-->
+	<select id="getVMAdvList2" parameterType="java.util.Map" resultMap="VendingMachineAdvModel">
+		SELECT VMAD.VM_SEQ,VMAD.ADV_SEQ,VMAD.CREATE_DATE,ORG.NAME AS ORGANIZATION_NANE,COM.NAME AS COMPANY_NAME, VM.VM_ID,VM.PLACE
+		     , AD.ADV_TITLE, AD.ADV_FILE, AD.ADV_OWNER, AD.ADV_TYPE
+		FROM TB_ADV AD
+		INNER JOIN TB_VENDING_MACHINE_ADV VMAD
+		ON VMAD.ADV_SEQ = AD.SEQ
+		INNER JOIN TB_VENDING_MACHINE VM
+		ON VM.SEQ = VMAD.VM_SEQ AND VM.VISIBLE = 'Y'
+		INNER JOIN TB_ORGANIZATION ORG
+		ON VM.ORGANIZATION_SEQ = ORG.SEQ AND ORG.VISIBLE = 'Y'
+		INNER JOIN TB_COMPANY COM
+		ON VM.COMPANY_SEQ = COM.SEQ
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+			AND AD.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="advSeq!=null and !advSeq.equals('') and advSeq!=0">
+			AND AD.SEQ = #{advSeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND AD.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND AD.ORGANIZATION_SEQ =(SELECT ORGANIZATION_SEQ FROM TB_VENDING_MACHINE WHERE SEQ = #{vmSeq})
+		</if>
+		<if test="vmSeq2!=null and !vmSeq2.equals('') and vmSeq2!=0">
+			AND VMAD.VM_SEQ = #{vmSeq2}
+		</if>
+		ORDER BY ORGANIZATION_NANE, VM_ID, AD.SEQ DESC
+	</select>
+
+
+
+
+</mapper>

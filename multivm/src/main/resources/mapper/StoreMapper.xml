@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.StoreMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.Store" id="StoreModel" autoMapping="true">
+		<result property="seq" column="SEQ"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="vmSeq" column="VM_SEQ"/>
+		<result property="productSeq" column="PRODUCT_SEQ"/>
+		<result property="productCount" column="COUNT"/>
+		<result property="storeDate" column="STORE_DATE"/>
+		<result property="storeTime" column="STORE_TIME"/>
+		<result property="slotNo" column="COL"/>
+
+		<result property="vmId" column="VM_ID"/>
+		<result property="terminalId" column="TERMINAL_ID"/>
+		<result property="productName" column="PRODUCT_NAME"/>
+		<result property="productCode" column="PRODUCT_CODE"/>
+		<result property="sDate" column="START_DATE"/>
+		<result property="eDate" column="END_DATE"/>
+
+	</resultMap>
+
+	<!--<insert id="insertStock" parameterType="java.util.Map">
+		INSERT INTO TB_STOCK
+		(SEQ, COMPANY_SEQ, ORGANIZATION_SEQ, VM_SEQ, PRODUCT_SEQ, COUNT, CREATE_DATE, CREATE_USER_SEQ)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{companySeq},#{organizationSeq},#{vmSeq}
+		     ,(SELECT TP.SEQ FROM TB_PRODUCT TP
+				WHERE TP.COMPANY_SEQ = #{companySeq} AND TP.ORGANIZATION_SEQ = #{organizationSeq} AND TP.CODE = #{productCode})
+		     ,0,now(), #{createUserSeq} from TB_STOCK
+	</insert>-->
+	<!--<select id="getStoreList" parameterType="java.util.Map" resultMap="StoreModel">
+		SELECT DATE_FORMAT(STR_TO_DATE(s.STORE_DATE,'%Y%m%d'),'%Y/%m/%d') AS STORE_DATE
+		,vm.VM_ID, vm.TERMINAL_ID
+		,p.NAME AS PRODUCT_NAME, p.CODE AS PRODUCT_CODE
+		,SUM(s.COUNT) AS COUNT
+		from TB_STORE s
+		inner join TB_PRODUCT p on p.SEQ = s.PRODUCT_SEQ
+		inner join TB_VENDING_MACHINE vm on vm.SEQ = s.VM_SEQ
+		WHERE s.COMPANY_SEQ = #{companySeq}
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND s.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		AND s.STORE_DATE BETWEEN #{sDate} AND #{eDate}
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+			AND vm.VM_ID =#{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('') and !terminalId.equals('전체')">
+			AND vm.TERMINAL_ID = #{terminalId}
+		</if>
+		GROUP BY s.PRODUCT_SEQ, s.STORE_DATE
+		ORDER BY s.STORE_DATE, vm.VM_ID, vm.TERMINAL_ID, p.CODE
+	</select>-->
+	<select id="getStoreList" parameterType="java.util.Map" resultType="kr.co.ubcn.multivm.model.Store">
+		SELECT DATE_FORMAT(STR_TO_DATE(s.STORE_DATE,'%Y%m%d'),'%Y.%m.%d') AS storeDate
+		,CONCAT(LEFT(s.STORE_TIME,2),':',MID(s.STORE_TIME,3,2),':',RIGHT(s.STORE_TIME,2)) AS storeTime
+		,vm.VM_ID AS vmId, vm.TERMINAL_ID AS terminalId
+		,p.NAME AS productName, p.CODE AS productCode
+		,s.COUNT AS productCount, s.COL AS slotNo
+		from TB_STORE s
+		inner join TB_PRODUCT p on p.SEQ = s.PRODUCT_SEQ
+		inner join TB_VENDING_MACHINE vm on vm.SEQ = s.VM_SEQ AND vm.VISIBLE = 'Y'
+		<if test="auth==4">
+			and vm.USER_SEQ = #{userSeq}
+		</if>
+		WHERE s.COMPANY_SEQ = #{companySeq}
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND s.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		AND s.STORE_DATE BETWEEN #{sDate} AND #{eDate}
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+			AND vm.VM_ID =#{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('') and !terminalId.equals('전체')">
+			AND vm.TERMINAL_ID = #{terminalId}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and !vmSeq.equals('전체') and vmSeq!=0">
+			AND vm.SEQ = #{vmSeq}
+		</if>
+		<if test="searchType!=null and !searchType.equals('') and searchType.equalsIgnoreCase('1')">
+			AND p.NAME like CONCAT('%' ,IFNULL(#{searchValue},'') , '%')
+		</if>
+		<if test="searchType!=null and !searchType.equals('') and searchType.equalsIgnoreCase('2')">
+			AND p.CODE like CONCAT('%' ,IFNULL(#{searchValue},'') , '%')
+		</if>
+		<if test="searchType!=null and !searchType.equals('') and searchType.equalsIgnoreCase('3')">
+			AND s.COL = #{searchValue}
+		</if>
+		ORDER BY s.STORE_DATE DESC,s.STORE_TIME DESC, vm.VM_ID, vm.TERMINAL_ID, p.CODE
+	</select>
+	<delete id="deleteStoreList" parameterType="int">
+		DELETE FROM TB_STORE
+		WHERE PRODUCT_SEQ = #{productSeq}
+	</delete>
+	<delete id="deleteStoreList_v1" parameterType="java.util.Map">
+		DELETE FROM TB_STORE
+		WHERE PRODUCT_SEQ = (SELECT SEQ from TB_PRODUCT
+								WHERE COMPANY_SEQ = #{companySeq}
+								AND ORGANIZATION_SEQ = #{organizationSeq}
+								AND CODE = #{productCode2})
+		<if test="vmSeq!=null and !vmSeq.equals('')">
+			AND VM_SEQ = #{vmSeq}
+		</if>
+	</delete>
+	<delete id="deleteStoreList_v2" parameterType="java.util.Map">
+		DELETE FROM TB_STORE
+		WHERE 1=1
+		AND VM_SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+
+
+</mapper>

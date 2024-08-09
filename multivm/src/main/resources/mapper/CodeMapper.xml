@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.CodeMapper">
+
+	<select id="getCodeList" parameterType="java.util.Map" resultType="kr.co.ubcn.multivm.model.Code">
+		SELECT seq
+		     , vm_model vmModel, code, info, type, IFNULL(solution,'') solution
+		     , DATE_FORMAT(reg_date,'%Y-%m-%d %H:%i:%s') regDate , url
+		FROM TB_CODE
+		WHERE 1=1
+		<if test="vmModel!=null and !vmModel.equals('') and !vmModel.equals('all')">
+			AND vm_model = #{vmModel}
+		</if>
+		<if test="code!=null and !code.equals('')">
+			AND code like CONCAT('%', #{code},'%')
+		</if>
+		<if test="info!=null and !info.equals('')">
+			AND info like CONCAT('%', #{info},'%')
+		</if>
+		<if test="type!=null and !type.equals('') and !type.equals('all')">
+			AND type = #{type}
+		</if>
+		<if test="seq!=null and !seq.equals('') and seq!=0">
+			AND seq = #{seq}
+		</if>
+		ORDER BY reg_date desc
+	</select>
+
+	<select id="checkDupCode" parameterType="kr.co.ubcn.multivm.model.Code" resultType="int">
+		SELECT COUNT(*)
+		FROM TB_CODE
+		WHERE seq <![CDATA[<>]]> #{seq}
+		AND type = #{type}
+		<if test="vmModel!=null and !vmModel.equals('')">
+			AND vm_model = #{vmModel}
+		</if>
+		<if test="code!=null and !code.equals('')">
+			AND code = #{code}
+		</if>
+	</select>
+
+	<insert id="insertCode" parameterType="kr.co.ubcn.multivm.model.Code">
+		INSERT INTO TB_CODE
+			(seq, vm_model, code, info, type, solution, reg_date, url)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+		,#{vmModel},#{code},#{info},#{type},#{solution},DATE_FORMAT(now(),'%Y%m%d%H%i%s'),#{url} from TB_CODE
+	</insert>
+
+	<update id="modifyCode" parameterType="kr.co.ubcn.multivm.model.Code">
+		UPDATE TB_CODE
+		SET
+		info = #{info}
+		,solution = #{solution}
+		,reg_date = DATE_FORMAT(now(),'%Y%m%d%H%i%s')
+		,url = #{url}
+		WHERE seq = #{seq}
+	</update>
+
+</mapper>
+

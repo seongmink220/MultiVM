@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.EventMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.Event" id="EventModel" autoMapping="true">
+		<result property="seq" column="SEQ"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="companyName" column="COMPANY_NAME"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="organizationName" column="ORGANIZATION_NAME"/>
+		<result property="eventTitle" column="EVENT_TITLE"/>
+		<result property="eventContent" column="EVENT_CONTENT"/>
+		<result property="eventContent2" column="EVENT_CONTENT2"/>
+		<result property="eventType" column="EVENT_TYPE"/>
+		<result property="eventData" column="EVENT_DATA"/>
+		<result property="eventStartTime" column="EVENT_START_TIME"/>
+		<result property="eventEndTime" column="EVENT_END_TIME"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+		<result property="modifyUserSeq" column="MODIFY_USER_SEQ"/>
+	</resultMap>
+
+	<select id="getEventInfo" parameterType="Integer" resultMap="EventModel">
+		SELECT e.SEQ,CONCAT(c.NAME,' / ',org.NAME) AS COMPANY_NAME,case
+			when e.EVENT_TYPE='%' then CONCAT(e.EVENT_DATA,'% 할인')
+			when e.EVENT_TYPE='-' then CONCAT(-e.EVENT_DATA ,'원 할인')
+			end AS EVENT_CONTENT2
+			 ,e.EVENT_TITLE, IFNULL(e.EVENT_CONTENT,'') AS EVENT_CONTENT
+			 ,CONCAT(DATE_FORMAT(e.EVENT_START_TIME,'%Y/%m/%d'),' ~ ',DATE_FORMAT(e.EVENT_END_TIME,'%Y/%m/%d')) AS EVENT_START_TIME
+			 ,e.CREATE_DATE
+		FROM TB_EVENT e
+				 INNER JOIN TB_ORGANIZATION org on e.ORGANIZATION_SEQ = org.SEQ and org.VISIBLE = 'Y'
+				 INNER JOIN TB_COMPANY c on c.SEQ = e.COMPANY_SEQ
+		WHERE e.SEQ = #{seq}
+	</select>
+	<select id="getEventInfo2" parameterType="Integer" resultMap="EventModel">
+		SELECT e.SEQ, c.NAME AS COMPANY_NAME,org.NAME AS ORGANIZATION_NAME,e.COMPANY_SEQ, e.ORGANIZATION_SEQ
+			 ,e.EVENT_TITLE, IFNULL(e.EVENT_CONTENT,'') AS EVENT_CONTENT, e.EVENT_TYPE, e.EVENT_DATA, DATE_FORMAT(e.EVENT_START_TIME,'%Y-%m-%d') AS EVENT_START_TIME
+			 , DATE_FORMAT(e.EVENT_END_TIME,'%Y-%m-%d') AS EVENT_END_TIME
+		FROM TB_EVENT e
+				 INNER JOIN TB_ORGANIZATION org on e.ORGANIZATION_SEQ = org.SEQ and org.VISIBLE = 'Y'
+				 INNER JOIN TB_COMPANY c on c.SEQ = e.COMPANY_SEQ
+		WHERE e.SEQ = #{seq}
+	</select>
+	<select id="searchEventList" parameterType="java.util.Map" resultMap="EventModel">
+		SELECT e.SEQ,e.COMPANY_SEQ,e.ORGANIZATION_SEQ,e.EVENT_TITLE
+		     ,CONCAT(DATE_FORMAT(e.EVENT_START_TIME,'%y/%m/%d'),' ~ ',DATE_FORMAT(e.EVENT_END_TIME,'%y/%m/%d')) AS EVENT_START_TIME
+		, org.NAME AS ORGANIZATION_NAME, case
+		when e.EVENT_TYPE='-' then CONCAT(-e.EVENT_DATA,'원 할인')
+		when e.EVENT_TYPE='%' then CONCAT(e.EVENT_DATA,'%할인') end AS EVENT_CONTENT
+		FROM TB_EVENT e
+		INNER JOIN TB_ORGANIZATION org on e.ORGANIZATION_SEQ = org.SEQ AND org.VISIBLE = 'Y'
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+			AND e.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="eventSeq!=null and !eventSeq.equals('') and eventSeq!=0">
+			AND e.SEQ = #{eventSeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND e.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="sDate!=null and !sDate.equals('')">
+			AND e.EVENT_START_TIME  <![CDATA[>=]]> #{sDate}
+		</if>
+		<if test="eDate!=null and !eDate.equals('')">
+			AND e.EVENT_END_TIME <![CDATA[<=]]> #{eDate}
+		</if>
+		<if test="index!=null">
+			AND e.EVENT_START_TIME <![CDATA[<=]]> now() AND e.EVENT_END_TIME <![CDATA[>=]]> now()
+		</if>
+		ORDER BY e.CREATE_DATE DESC
+	</select>
+
+	<insert id="insertEvent" parameterType="kr.co.ubcn.multivm.model.Event">
+		INSERT INTO TB_EVENT
+			(SEQ, COMPANY_SEQ, ORGANIZATION_SEQ, EVENT_TITLE, EVENT_CONTENT, EVENT_TYPE, EVENT_DATA, EVENT_START_TIME, EVENT_END_TIME, CREATE_DATE,CREATE_USER_SEQ)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{companySeq},#{organizationSeq},#{eventTitle},#{eventContent},#{eventType},#{eventData},#{eventStartTime},CONCAT(#{eventEndTime},' 23:59:59'),now(), #{createUserSeq} from TB_EVENT
+	</insert>
+
+
+
+	<update id="modifyEvent" parameterType="kr.co.ubcn.multivm.model.Event">
+		UPDATE TB_EVENT
+		SET EVENT_TITLE=#{eventTitle}, EVENT_CONTENT=#{eventContent}
+		  , EVENT_TYPE=#{eventType}, EVENT_DATA=#{eventData}
+		  , EVENT_START_TIME=#{eventStartTime}, EVENT_END_TIME= CONCAT(#{eventEndTime},' 23:59:59')
+		  , MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{seq}
+	</update>
+	<update id="updateVMProductEvent" parameterType="java.util.Map">
+		UPDATE TB_VENDING_MACHINE_PRODUCT
+		SET EVENT_SEQ=#{eventSeq}
+		  , MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE 1=1
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+		AND VM_SEQ = #{vmSeq} AND PRODUCT_CODE =#{productCode}
+		</if>
+		<if test="d_eventSeq!=null and !d_eventSeq.equals('') and d_eventSeq!=0">
+		AND EVENT_SEQ = #{d_eventSeq}
+		</if>
+	</update>
+
+	<delete id="deleteEvent" parameterType="java.util.Map">
+		DELETE FROM TB_EVENT
+		WHERE SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+
+	<update id="updateVMProductEvent_v2" parameterType="java.util.Map">
+		UPDATE TB_VENDING_MACHINE_PRODUCT
+		SET EVENT_SEQ=#{eventSeq}
+		  , MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE 1=1
+		AND (VM_SEQ,PRODUCT_CODE) IN
+		<foreach item="VendingMachineProduct" index="index" collection="list" separator=",">
+			(#{item.vmSeq},#{item.productCode})
+		</foreach>
+	</update>
+
+
+
+
+
+</mapper>

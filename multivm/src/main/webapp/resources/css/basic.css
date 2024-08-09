@@ -1,0 +1,251 @@
+
+@charset "utf-8";
+
+input[type=text] { padding:0 7px; border:1px solid #d8d8d8; border-radius: 4px;}
+input[type=password] { padding:0 7px; border:1px solid #d8d8d8;}
+input[type=number]{ height: 38px; border: 1px solid #d8d8d8; padding: 3px; border-radius: 4px;}
+input[type=date]{ padding: 0 10px!important;}
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-calendar-picker-indicator {width: 18px; border: 0px solid red;  margin: 0; position: relative; right: -5px;}
+input::placeholder { color:#a9a9a9;}
+input:disabled { background: #f1f1f3; }
+input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus, input:-webkit-autofill:active { transition: background-color 5000s ease-in-out 0s; -webkit-transition: background-color 9999s ease-out; -webkit-box-shadow: 0 0 0px 1000px #eeeeee inset !important; }
+
+input[list]::placeholder { color:#a9a9a9;}
+input[list]:disabled { background: #f1f1f3; }
+input[list]:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus, input:-webkit-autofill:active { transition: background-color 5000s ease-in-out 0s; -webkit-transition: background-color 9999s ease-out; -webkit-box-shadow: 0 0 0px 1000px #eeeeee inset !important; }
+
+textarea{ border:1px solid #d8d8d8; }
+
+/* 버튼설정 */
+
+.button {
+    font: 14px Arial;
+    padding: 0 16px;
+    height: 38px;
+    background-color: #fff;
+    border:1px solid #8d95a3;
+    color:#11223e !important;
+    text-align:center;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    margin-left:4px;
+    line-height: 38px;
+}
+
+.button4 {
+    font: 14px Arial;
+    padding: 0 16px;
+    height: 38px;
+    background-color: #fff;
+    border:1px solid #8d95a3;
+    color:#11223e !important;
+    text-align:center;
+    vertical-align: middle;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    margin-left:4px;
+    line-height: 38px;
+}
+
+@media all and  (max-width: 479px){
+    .button {padding: 0 6px!important;}
+}
+
+@media all and (max-width:1023px){
+    .button {padding: 0 16px!important;}
+    .button3 { font-weight: 400;}
+}
+
+.button:hover{ background: #f2f2f2;}
+.button>img{ position: relative; bottom: -5px;}
+
+.button2 {
+    font: 16px Arial;
+    /*padding: 0 16px;*/
+    width: 100px;
+    height: 48px;
+    border:0px solid #8d95a3;
+    color:#fff !important;
+    text-align:center;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    margin-left:6px;
+    line-height: 48px;
+}
+.button2:hover{box-shadow: 200px 0 0 0 rgba(0,0,0,0.25) inset, -200px 0 0 0 rgba(0,0,0,0.25) inset;}
+
+
+.button3 {
+    font: 16px;
+    padding: 0 17px;
+    height: 40px;
+    background-color: #0075fe;
+    border:0px solid #8d95a3;
+    color:#fff !important;
+    text-align:center;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    margin-left:4px;
+    line-height: 40px;
+}
+.button3:hover{box-shadow: 200px 0 0 0 rgba(0,0,0,0.25) inset, -200px 0 0 0 rgba(0,0,0,0.25) inset;}
+.button3>img{ position: relative; bottom: -5px;}
+
+.top_btn_area .button:hover{ background:#4170c8}
+.top_btn_area .button2:hover{ background:#4170c8}
+
+.top_btn_area2{ overflow: hidden; display: block; margin-top: 20px; float: right;}
+.top_btn_area2 .button:hover{ background:#4170c8}
+.top_btn_area2 .button2:hover{ background:#4170c8}
+
+/**
+ * CSS File for ezMark jQuery Plugin
+ *
+ **/
+.ez-hide				{ opacity: 0; filter:alpha(opacity=0);  height:20px; width:20px; display:inline-block; cursor:pointer;}
+.ez-checkbox			{ background: transparent url('../images/checkbox.png') 0 0 no-repeat; height:20px; width:20px;  display:inline-block; cursor:pointer; }
+.ez-radio				{ background: transparent url('../images/radio.png') 0 0 no-repeat; height:20px; width:20px;  display:inline-block; cursor:pointer; }
+
+.ez-checked				{ background-position: 0 -20px; }
+.ez-selected			{ background-position: 0 -20px; }
+
+.ez-checkbox, .ez-radio	{ zoom: 1; *display:inline; _height:20px; position:relative;}
+
+.ez_label				{ margin-right:10px;}
+.ez_label .ez-radio,
+.ez_label .ez-checkbox	{ margin-right:4px;}
+
+.radio_area{border: 0px solid red; position: relative; bottom: -5px;}
+.radio_area>label{ border: 0px solid red; margin-top: -15px; margin-right: 10px;}
+
+select {
+    width: auto; /* 원하는 너비설정 */
+    padding: .8em .5em; /* 여백으로 높이 설정 */
+    font-family: inherit; /* 폰트 상속 */
+    text-indent:7px;
+    font-size:16px;  /*line-height: 18px!important;*/
+    background: url('../images/select_arrow.png') no-repeat right 50%; /* 네이티브 화살표 대체 */
+    border: 1px solid #d8d8d8; border-radius: 4px; /* iOS 둥근모서리 제거 */
+    -webkit-appearance: none; /* 네이티브 외형 감추기 */
+    -moz-appearance: none;
+    appearance: none; white-space:nowrap; overflow: hidden; text-overflow:ellipsis;
+    font-weight: 400;
+}
+select>option{font-weight: 300;}
+
+
+select::-ms-expand { display: none; }
+
+
+input[list] datalist {
+    background: url('../images/select_arrow.png') no-repeat right 50%; /* 네이티브 화살표 대체 */
+    border: 1px solid #d8d8d8; border-radius: 4px; /* iOS 둥근모서리 제거 */
+    -webkit-appearance: none; /* 네이티브 외형 감추기 */
+    -moz-appearance: none;
+    appearance: none; 
+}
+
+input.arrow_delete[list] datalist {
+    background: none; /* 네이티브 화살표 대체 */
+    -webkit-appearance: none; /* 네이티브 외형 감추기 */
+    -moz-appearance: none;
+    appearance: none; 
+}
+input.arrow_delete[list] { background: none; /* 네이티브 화살표 대체 */
+    -webkit-appearance: none; /* 네이티브 외형 감추기 */
+    -moz-appearance: none;
+    appearance: none;}
+
+[list]::-webkit-calendar-picker-indicator {display: none;}/*datalist 화살표 제거*/
+input::-webkit-calendar-picker-indicator {opacity: 0;}/*datalist 화살표 제거*/
+input[type="date"]::-webkit-calendar-picker-indicator {opacity: 100%;}/*datalist 화살표 제거*/
+
+input[list] {
+    width: 50px; /* 원하는 너비설정 */
+    padding: .8em .5em; /* 여백으로 높이 설정 */
+    font-family: inherit; /* 폰트 상속 */
+    text-indent:7px;
+    font-size:14px;  /*line-height: 18px!important;*/
+    background: url('../images/select_arrow.png') no-repeat right 50%; /* 네이티브 화살표 대체 */
+    border: 1px solid #d8d8d8; border-radius: 4px; /* iOS 둥근모서리 제거 */
+    -webkit-appearance: none; /* 네이티브 외형 감추기 */
+    -moz-appearance: none;
+    appearance: none; white-space:nowrap; overflow: hidden; text-overflow:ellipsis;
+    font-weight: 400;
+}
+input[list]>option{font-weight: 300;}
+
+
+input[list]::-ms-expand { display: none; }
+
+
+
+
+.btn_login{
+    font: 16px;
+    font-weight: 600;
+    width: 100%;
+    color: #fff!important;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    height: 50px; line-height: 54px;
+    background: #0075fe;
+}
+.btn_login:hover{box-shadow: 500px 0 0 0 rgba(0,0,0,0.25) inset, -500px 0 0 0 rgba(0,0,0,0.25) inset;}
+
+.lineDiv{
+    display: inline-block;
+    width: 155px;
+    border-bottom: 1px solid #ffffff;
+}
+
+.btn_modi{
+    font: 16px Arial;
+    font-weight: bold;
+    padding: 12px 12px;
+    width: 185px !important;
+    background-color: #518cfa;
+    color: #ddedff !important;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px; float: left;
+    
+}
+
+.btn_confirm{
+    font: 16px Arial;
+    font-weight: bold;
+    padding: 12px 12px;
+    width: 185px !important;
+    background-color: #518cfa;
+    color: #ddedff !important;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    
+}
+
+.box-radio-input input[type="radio"]{display:none;}
+.box-radio-input input[type="radio"] + span{display:inline-block; color: #000000; background:none; border:1px solid #dfdfdf; padding:0px 10px; text-align:center; height:35px; line-height:33px; font-weight:400; cursor:pointer; border-radius: 4px;}
+.box-radio-input input[type="radio"]:checked + span{border:1px solid #0075fe; background:#f1f5fa; color:#0075fe;}

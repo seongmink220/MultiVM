@@ -1,0 +1,51 @@
+@charset "utf-8";
+@import url(http://fonts.googleapis.com/earlyaccess/notosanskr.css);
+@import url(https://cdn.rawgit.com/moonspam/NanumSquare/master/nanumsquare.css);
+
+
+/* basic */
+* { margin:0; padding:0; font-family:'Noto Sans KR',Sans-serif; color:#000; word-break: keep-all; letter-spacing: -0.01em; }
+html, body { width:100%; height:100%; }
+body { margin:0; padding:0; font-size:16px; font-family:'Noto Sans KR', sans-serif, 'dotum','돋움'!important; font-weight: 300; background: #f3f7fd;}
+html, h1, h2, h3, h4, h5, h6, form, fieldset, img { margin:0; padding:0; border:0; }
+label, input, button, select, input[list] { display: inline-block; vertical-align:middle; outline: 0; }
+input, input[list],  button { margin:0; padding:0; font-family: 'Noto Sans KR', '돋움', 'dodum', helvetica, sans-serif; outline: 0; }
+input, input[list]{ height: 38px!important; line-height: 38px!important; font-size: 16px!important; border-radius: 4px!important;}
+input[type=password] { font-family: 'Noto Sans KR', 'Roboto', '돋움', 'dodum', helvetica, sans-serif; }
+input[type=password]::placeholder { font-family: 'Noto Sans KR', '돋움', 'dodum', helvetica, sans-serif; }
+input:focus {border: 1px solid #171717!important;}
+input[list]:focus {border: 1px solid #e1e1e1!important;}
+button { cursor:pointer; }
+textarea { width:100%; box-sizing:border-box; outline: 0;}
+textarea:focus {border: 1px solid #171717!important;}
+fieldset>legend{ display: none;}
+input[type=radio]{ display:inline-block; float: left; width: 33.33%;}
+
+/* 제목태그설정 */
+h1, h2, h3, h4, h5, h6 { margin:0; padding:0; font-size:1em; font-family: 'Noto Sans KR', '돋움', 'dodum', helvetica, sans-serif; }
+
+/* 시멘틱태그설정 */
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display:block; }
+
+/* 링크 */
+a { display: inline-block; color: #002060; }
+a:link, a:visited { color:#002060; text-decoration:none; }
+a:hover, a:focus, a:active { color:#002060; text-decoration:none; }
+
+/* 기타설정 */
+img {/* max-width:200px; vertical-align:top;max-height: 200px */}
+ul, ol, li { list-style:none; margin:0; padding:0; }
+p { word-break:keep-all; }
+b { font-weight:400; }
+table { border-spacing: 0; border-collapse: collapse; }
+table th { /*font-weight:400;*/}
+
+
+/* 추가 설정 */
+.hidden { overflow:hidden; }
+.hide { display:none; }
+.show { display:block !important; }
+.after_clear:after { display:block; content:''; clear:both; }
+.center { text-align: center; }
+.left { text-align: left; }
+.right { text-align: right; }

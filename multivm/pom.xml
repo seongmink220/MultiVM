@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.6.2</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>kr.co.ubcn</groupId>
+	<artifactId>multivm</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>war</packaging>
+	<name>multivm</name>
+	<description>Demo project for Spring Boot</description>
+	<properties>
+		<java.version>1.8</java.version>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-tomcat</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mybatis.spring.boot</groupId>
+			<artifactId>mybatis-spring-boot-starter</artifactId>
+			<version>2.1.3</version>
+		</dependency>
+		<!-- 톰캣 파서 -->		
+		<dependency>
+		   <groupId>org.apache.tomcat.embed</groupId>
+		   <artifactId>tomcat-embed-jasper</artifactId>
+		   <scope>provided</scope>
+		</dependency>
+		
+		<!-- jstl 라이브러리 -->
+		<dependency>
+		   <groupId>javax.servlet</groupId>
+		   <artifactId>jstl</artifactId>
+		</dependency>
+		
+		<dependency>
+		    <groupId>com.googlecode.json-simple</groupId>
+		    <artifactId>json-simple</artifactId>
+		    <version>1.1.1</version>
+		</dependency>
+		<!-- Swagger -->
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger2</artifactId>
+			<version>2.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger-ui</artifactId>
+			<version>2.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<!-- Maria DB 추가. -->
+		<dependency>
+			<groupId>org.mariadb.jdbc</groupId>
+			<artifactId>mariadb-java-client</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.13.1</version>
+		</dependency>
+
+		<!--<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+			<version>2.5.5</version>
+		</dependency>-->
+
+		<!-- log4jdbc -->
+		<dependency>
+			<groupId>org.bgee.log4jdbc-log4j2</groupId>
+			<artifactId>log4jdbc-log4j2-jdbc4.1</artifactId>
+			<version>1.16</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.tiles</groupId>
+			<artifactId>tiles-jsp</artifactId>
+			<version>3.0.8</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tiles</groupId>
+			<artifactId>tiles-servlet</artifactId>
+			<version>3.0.8</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tiles</groupId>
+			<artifactId>tiles-core</artifactId>
+			<version>3.0.8</version>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.11.0</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-fileupload</groupId>
+			<artifactId>commons-fileupload</artifactId>
+			<version>1.4</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>4.1.2</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.poi/poi -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>4.1.2</version>
+		</dependency>
+		<!-- 파일서버에 파일 업로드하기 위한 jsch -->
+		<dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.55</version>
+		</dependency>
+
+		<!--서버 일괄이미지 리사이징을 위함-->
+		<!-- https://mvnrepository.com/artifact/org.imgscalr/imgscalr-lib -->
+		<dependency>
+			<groupId>org.imgscalr</groupId>
+			<artifactId>imgscalr-lib</artifactId>
+			<version>4.2</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.twelvemonkeys.imageio/imageio-core -->
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-core</artifactId>
+			<version>3.4.1</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.twelvemonkeys.imageio/imageio-jpeg -->
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-jpeg</artifactId>
+			<version>3.4.1</version>
+		</dependency>
+
+		<!-- 이모지 -->
+		<!-- https://mvnrepository.com/artifact/com.vdurmont/emoji-java -->
+		<dependency>
+			<groupId>com.vdurmont</groupId>
+			<artifactId>emoji-java</artifactId>
+			<version>5.1.1</version>
+		</dependency>
+
+
+
+	</dependencies>
+
+
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

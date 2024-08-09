@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.UserMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.User" id="UserModel" autoMapping="true">
+		<result property="seq" column="SEQ"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="companyName" column="COMPANY_NAME"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="organizationName" column="ORGANIZATION_NAME"/>
+		<result property="id" column="ID"/>
+		<result property="password" column="PASSWORD"/>
+		<result property="name" column="NAME"/>
+		<result property="auth" column="AUTH"/>
+		<result property="auth2" column="AUTH2"/>
+		<result property="email" column="EMAIL"/>
+		<result property="useYN" column="USE_YN"/>
+		<result property="visible" column="VISIBLE"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+		<result property="modifyUserSeq" column="MODIFY_USER_SEQ"/>
+
+	</resultMap>
+	<resultMap type="kr.co.ubcn.multivm.model.LoginUser" id="LoginUserModel">
+		<result property="seq" column="SEQ"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="id" column="ID"/>
+		<result property="password" column="PASSWORD"/>
+		<result property="name" column="NAME"/>
+		<result property="auth" column="AUTH"/>
+		<result property="email" column="EMAIL"/>
+		<result property="useYN" column="USE_YN"/>
+		<result property="visible" column="VISIBLE"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+		<result property="modifyUserSeq" column="MODIFY_USER_SEQ"/>
+		<result property="companyName" column="COMPANY_NAME"/>
+		<result property="organizationName" column="ORGANIZATION_NAME"/>
+		<result property="depth" column="DEPTH"/>
+		<result property="parentSeq" column="PARENT_SEQ"/>
+	</resultMap>
+
+	<!--로그인시 체크용-->
+	<select id="getOneUserList" parameterType="kr.co.ubcn.multivm.model.User" resultMap="UserModel">
+		SELECT *
+		FROM TB_USER
+		WHERE BINARY(ID) = #{id}
+		  AND BINARY(PASSWORD) = #{password}
+		  AND VISIBLE = 'Y'
+	</select>
+
+	<!--사용자정보상세-->
+	<select id="getUserInfoDetail" parameterType="kr.co.ubcn.multivm.model.User" resultMap="UserModel">
+		SELECT us.SEQ AS SEQ, us.COMPANY_SEQ AS COMPANY_SEQ, IFNULL(us.ORGANIZATION_SEQ,0) AS ORGANIZATION_SEQ
+			 ,us.ID AS ID, us.PASSWORD AS PASSWORD, us.NAME AS NAME, us.AUTH AS AUTH
+			 ,us.EMAIL AS EMAIL, us.USE_YN AS USE_YN, us.CREATE_DATE AS CREATE_DATE
+			 ,us.CREATE_USER_SEQ AS CREATE_USER_SEQ, us.MODIFY_DATE AS MODIFY_DATE
+			 ,us.MODIFY_USER_SEQ AS MODIFY_USER_SEQ,us.VISIBLE,
+			com.NAME AS COMPANY_NAME,
+			IFNULL(org.name,'') AS ORGANIZATION_NAME
+		FROM TB_USER us
+				INNER JOIN TB_COMPANY com
+							ON us.COMPANY_SEQ = com.SEQ
+				LEFT JOIN TB_ORGANIZATION org
+							ON us.ORGANIZATION_SEQ = org.SEQ
+		WHERE 1=1
+		<if test="name!=null and !name.equals('')">
+			AND us.NAME = #{userName}
+		</if>
+		<if test="seq!=null and !seq.equals('')">
+			AND us.SEQ = #{seq}
+		</if>
+		<if test="id!=null and !id.equals('')">
+			AND us.ID = #{id}
+		</if>
+		AND us.VISIBLE = 'Y'
+	</select>
+
+	<!--사용자정보상세 map 으로 조회-->
+	<select id="getUserinfo" parameterType="java.util.Map" resultMap="UserModel">
+		SELECT SEQ ,COMPANY_SEQ ,IFNULL(ORGANIZATION_SEQ,0) AS ORGANIZATION_SEQ  ,ID ,PASSWORD ,NAME ,AUTH ,EMAIL ,USE_YN ,VISIBLE ,CREATE_DATE ,CREATE_USER_SEQ ,MODIFY_DATE ,MODIFY_USER_SEQ
+		FROM TB_USER
+		WHERE 1=1
+		<if test="name!=null and !name.equals('')">
+		AND NAME = #{userName}
+		</if>
+		<if test="seq!=null and !seq.equals('')">
+		AND SEQ = #{userSeq}
+		</if>
+		<if test="userId!=null and !userId.equals('') and !userId.equals(' ')">
+		AND ID = #{userId}
+		</if>
+		AND VISIBLE = 'Y'
+	</select>
+
+	<insert id="insertUser" parameterType="kr.co.ubcn.multivm.model.User">
+		INSERT INTO TB_USER
+		(SEQ, COMPANY_SEQ, ORGANIZATION_SEQ, ID, PASSWORD, NAME, AUTH,EMAIL, USE_YN, VISIBLE, CREATE_DATE,CREATE_USER_SEQ)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{companySeq},IF(#{organizationSeq}=0,NULL,#{organizationSeq}),#{id},#{password},#{name},#{auth},#{email},#{useYN},'Y',now(), #{createUserSeq} from TB_USER
+	</insert>
+
+	<update id="modifyUser" parameterType="kr.co.ubcn.multivm.model.User">
+		UPDATE TB_USER
+		SET
+			USE_YN=#{useYN},ID=#{id},PASSWORD=#{password},COMPANY_SEQ=#{companySeq}
+		  ,NAME=#{name},ORGANIZATION_SEQ=IF(#{organizationSeq}=0,NULL,#{organizationSeq}),AUTH=#{auth},EMAIL=#{email}
+		  , MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{seq}
+	</update>
+	<delete id="deleteUser" parameterType="int">
+		DELETE FROM TB_USER
+		WHERE SEQ = #{seq}
+	</delete>
+	<select id="getCompanyAllUserList" parameterType="kr.co.ubcn.multivm.model.User" resultMap="UserModel">
+		SELECT us.SEQ AS SEQ, us.COMPANY_SEQ AS COMPANY_SEQ, us.ORGANIZATION_SEQ AS ORGANIZATION_SEQ
+			 ,us.ID AS ID, us.PASSWORD AS PASSWORD, us.NAME AS NAME, us.AUTH AS AUTH
+			 , case when us.AUTH = 0 then '시스템관리자' when us.AUTH = 1 then '소속관리자'
+				when us.AUTH = 3 then '조직관리자' when us.AUTH = 4 then '자판기운영자' else '' end AS AUTH2
+			 ,us.EMAIL AS EMAIL, us.USE_YN AS USE_YN, us.CREATE_DATE AS CREATE_DATE
+			 ,us.CREATE_USER_SEQ AS CREATE_USER_SEQ, us.MODIFY_DATE AS MODIFY_DATE
+			 ,us.MODIFY_USER_SEQ AS MODIFY_USER_SEQ,
+			com.NAME AS COMPANY_NAME,
+			IFNULL(org.name,'') AS ORGANIZATION_NAME
+		FROM TB_USER us
+				INNER JOIN TB_COMPANY com
+							ON us.COMPANY_SEQ = com.SEQ
+				LEFT JOIN TB_ORGANIZATION org
+							ON us.ORGANIZATION_SEQ = org.SEQ
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+		AND com.SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+		AND org.SEQ = #{organizationSeq}
+		</if>
+		<if test="seq!=null and !seq.equals('')">
+		AND us.SEQ = #{seq}
+		</if>
+		<if test="useYN!=null and !useYN.equals('')">
+			AND us.USE_YN = #{useYN}
+		</if>
+		<if test="auth!=null and !auth.equals('')">
+			AND us.AUTH <![CDATA[>=]]> #{auth}
+		</if>
+		<if test="name!=null and !name.equals('')">
+			AND (org.NAME like CONCAT('%', #{organizationName},'%')
+			OR us.NAME like CONCAT('%', #{name},'%') OR us.ID like CONCAT('%', #{name},'%'))
+		</if>
+		AND us.VISIBLE = 'Y'
+		ORDER BY us.CREATE_DATE DESC
+	</select>
+	<select id="idCheckDup" parameterType="kr.co.ubcn.multivm.model.User" resultMap="UserModel">
+		SELECT *
+		FROM TB_USER
+		WHERE ID = #{id}
+		<if test="seq!=null and !seq.equals('')">
+		  AND SEQ NOT IN  (#{seq})
+		</if>
+	</select>
+
+	<delete id="deleteUser_v2" parameterType="java.util.Map">
+		DELETE FROM TB_USER
+		WHERE 1=1
+		<if test="target!=null and target.equals('company')">
+		    AND COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="target!=null and target.equals('organization')">
+			AND ORGANIZATION_SEQ = #{organizationSeq}
+		    AND AUTH ='3'
+		</if>
+		<if test="deleteList!=null and deleteList.size!=0">
+			AND SEQ IN
+			<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+				#{type}
+			</foreach>
+		</if>
+	</delete>
+
+	<update id="updateOrgUser" parameterType="java.util.Map">
+		UPDATE TB_USER
+		SET
+		ORGANIZATION_SEQ=NULL
+		, MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE ORGANIZATION_SEQ = #{organizationSeq}
+	</update>
+
+	<update id="deleteUser_v3" parameterType="java.util.Map">
+		UPDATE TB_USER
+		SET
+			VISIBLE='N'
+		  , MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE 1=1
+		<if test="target!=null and target.equals('organization')">
+			AND ORGANIZATION_SEQ = #{organizationSeq}
+			AND AUTH ='3'
+		</if>
+		<if test="deleteList!=null and deleteList.size!=0">
+			AND SEQ IN
+			<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+				#{type}
+			</foreach>
+		</if>
+	</update>
+
+
+	<select id="getUserVMList" parameterType="java.util.Map" resultType="String">
+		SELECT VM_ID
+		FROM TB_VENDING_MACHINE
+		WHERE USER_SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+		ORDER BY VM_ID
+	</select>
+</mapper>
+
+

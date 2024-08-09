@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.VendingMachineStatusMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.VendingMachineStatus" id="VendingMachineStatusModel" autoMapping="true">
+		<result property="vmSeq" column="VM_SEQ"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="companyName" column="COMPANY_NAME"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="organizationName" column="ORGANIZATION_NAME"/>
+		<result property="vmId" column="VM_ID"/>
+		<result property="vmModel" column="VM_MODEL"/>
+		<result property="terminalId" column="TERMINAL_ID"/>
+		<result property="place" column="PLACE"/>
+		<result property="temper" column="TEMPER"/>
+		<result property="st" column="ST"/>
+		<result property="jg" column="JG"/>
+		<result property="pm" column="PM"/>
+		<result property="mc" column="MC"/>
+		<result property="regDate" column="REG_DATE"/>
+	</resultMap>
+
+	<select id="getVMStatus" parameterType="int" resultMap="VendingMachineStatusModel">
+		SELECT vm.VM_ID,vm.PLACE,vm.TERMINAL_ID,vm.VM_MODEL, org.NAME AS ORGANIZATION_NAME,com.NAME AS COMPANY_NAME,vms.*
+		FROM TB_VENDING_MACHINE vm
+		INNER JOIN TB_VENDING_MACHINE_STATUS vms on vm.SEQ = vms.VM_SEQ
+		INNER JOIN TB_ORGANIZATION org on vm.ORGANIZATION_SEQ = org.SEQ
+		INNER JOIN TB_COMPANY com ON vm.COMPANY_SEQ = com.SEQ
+		WHERE 1=1
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND vms.VM_SEQ = #{vmSeq}
+		</if>
+		ORDER BY vms.REG_DATE DESC LIMIT 1
+	</select>
+	<select id="getVMStatusList" parameterType="java.util.Map" resultMap="VendingMachineStatusModel">
+		SELECT vm.VM_ID,vm.PLACE,vm.VM_MODEL, org.NAME AS ORGANIZATION_NAME,com.NAME AS COMPANY_NAME,vms.VM_SEQ
+		     ,IFNULL(vms.TEMPER,0) AS TEMPER,IFNULL(vms.ST,'') AS ST,IFNULL(vms.JG,0) AS JG,IFNULL(vms.PM,0) AS PM,IFNULL(vms.MC,0) AS MC,IFNULL(MAX(vms.REG_DATE),'') AS REG_DATE
+		FROM TB_VENDING_MACHINE vm
+		INNER JOIN TB_VENDING_MACHINE_STATUS vms on vm.SEQ = vms.VM_SEQ
+		INNER JOIN TB_ORGANIZATION org on vm.ORGANIZATION_SEQ = org.SEQ
+		INNER JOIN TB_COMPANY com ON vm.COMPANY_SEQ = com.SEQ
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+		AND vm.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND vm.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('')">
+			AND vm.VM_ID = #{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('')">
+			AND vm.TERMINAL_ID = #{terminalId}
+		</if>
+		<if test="place!=null and !place.equals('')">
+			AND vm.PLACE = #{place}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('')">
+			AND vm.USER_SEQ = #{userSeq}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND vms.VM_SEQ = #{vmSeq}
+		</if>
+		AND vms.SEQ IN (SELECT MAX(SEQ) FROM TB_VENDING_MACHINE_STATUS GROUP BY VM_SEQ)
+		GROUP BY vms.VM_SEQ
+		ORDER BY COMPANY_NAME,ORGANIZATION_NAME, vm.PLACE
+	</select>
+
+	<insert id="insertVMStatus" parameterType="kr.co.ubcn.multivm.model.VendingMachineStatus">
+		INSERT INTO TB_VENDING_MACHINE_STATUS
+		(SEQ, VM_SEQ, TEMPER, ST, JG, PM, MC, REG_DATE, ACTION_DATA)
+		VALUE (NEXTVAL(SQ_VENDING_MACHINE_STATUS), #{vmSeq},#{temper},#{st},#{jg},#{pm},#{mc},now(),IFNULL(#{actionData},''))
+	</insert>
+
+	<delete id="deleteVMStatusList_v2" parameterType="java.util.Map">
+		DELETE FROM TB_VENDING_MACHINE_STATUS
+		WHERE 1=1
+		AND VM_SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+
+	<!--<delete id="deleteVM" parameterType="int">
+		DELETE FROM TB_VENDING_MACHINE
+		WHERE SEQ = #{seq}
+	</delete>-->
+
+
+
+
+
+
+
+
+</mapper>
+

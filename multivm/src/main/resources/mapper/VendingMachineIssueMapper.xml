@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.VendingMachineIssueMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.VendingMachineIssue" id="VendingMachineIssueModel" autoMapping="true">
+		<result property="vmSeq" column="VM_SEQ"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="companyName" column="COMPANY_NAME"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="organizationName" column="ORGANIZATION_NAME"/>
+		<result property="vmId" column="VM_ID"/>
+		<result property="vmModel" column="VM_MODEL"/>
+		<result property="terminalId" column="TERMINAL_ID"/>
+		<result property="seq" column="SEQ"/>
+		<result property="place" column="PLACE"/>
+		<result property="type" column="TYPE"/>
+		<result property="code" column="CODE"/>
+		<result property="info" column="INFO"/>
+		<result property="regDate" column="REG_DATE"/>
+	</resultMap>
+
+	<select id="getVMIssue" parameterType="int" resultMap="VendingMachineIssueModel">
+		SELECT vm.VM_ID,vm.PLACE,vm.TERMINAL_ID
+		     ,case when vm.VM_MODEL='1' then '10N' when vm.VM_MODEL='3' then '10C' else '' end AS VM_MODEL
+		     , org.NAME AS ORGANIZATION_NAME,com.NAME AS COMPANY_NAME,vmi.*
+		FROM TB_VENDING_MACHINE vm
+		INNER JOIN TB_VENDING_MACHINE_ISSUE vmi on vm.SEQ = vmi.VM_SEQ
+		INNER JOIN TB_ORGANIZATION org on vm.ORGANIZATION_SEQ = org.SEQ
+		INNER JOIN TB_COMPANY com ON vm.COMPANY_SEQ = com.SEQ
+		WHERE 1=1
+		AND vmi.SEQ = #{seq}
+	</select>
+	<select id="getVMIssueList" parameterType="java.util.Map" resultMap="VendingMachineIssueModel">
+		SELECT vm.VM_ID,vm.PLACE,case when vm.VM_MODEL='1' then '10N' when vm.VM_MODEL='3' then '10C' else '' end AS VM_MODEL, org.NAME AS ORGANIZATION_NAME,com.NAME AS COMPANY_NAME,vmi.SEQ, vmi.VM_SEQ
+		,IFNULL(vmi.TYPE,'') AS TYPE,IFNULL(tc.CODE,vmi.CODE) AS CODE,IFNULL(vmi.INFO,'') AS INFO,IFNULL(DATE_FORMAT(vmi.REG_DATE,'%Y-%m-%d %H:%i:%s'),'') AS REG_DATE
+		FROM TB_VENDING_MACHINE_ISSUE vmi
+		INNER JOIN TB_VENDING_MACHINE vm on vm.SEQ = vmi.VM_SEQ
+		INNER JOIN TB_ORGANIZATION org on vm.ORGANIZATION_SEQ = org.SEQ
+		INNER JOIN TB_COMPANY com ON vm.COMPANY_SEQ = com.SEQ
+		LEFT JOIN TB_CODE tc ON vm.VM_MODEL = tc.VM_MODEL AND vmi.CODE = tc.CODE
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+		AND vm.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND vm.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('')">
+			AND vm.VM_ID = #{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('')">
+			AND vm.TERMINAL_ID = #{terminalId}
+		</if>
+		<if test="place!=null and !place.equals('')">
+			AND vm.PLACE = #{place}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('')">
+			AND vm.USER_SEQ = #{userSeq}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND vmi.VM_SEQ = #{vmSeq}
+		</if>
+		<if test="searchType!=null and !searchType.equals('') and searchType.equalsIgnoreCase('1')">
+			AND vmi.TYPE like CONCAT('%' ,IFNULL(#{searchValue},'') , '%')
+		</if>
+		<if test="searchType!=null and !searchType.equals('') and searchType.equalsIgnoreCase('2')">
+			AND vmi.CODE like CONCAT('%' ,IFNULL(#{searchValue},'') , '%')
+		</if>
+		<if test="searchType!=null and !searchType.equals('') and searchType.equalsIgnoreCase('3')">
+			AND vmi.INFO like CONCAT('%' ,IFNULL(#{searchValue},'') , '%')
+		</if>
+		AND vmi.REG_DATE BETWEEN CONCAT(#{sDate},'000000') AND CONCAT(#{eDate},'235959')
+		ORDER BY vmi.REG_DATE DESC
+	</select>
+
+	<insert id="insertVMIssue" parameterType="kr.co.ubcn.multivm.model.VendingMachineIssue">
+		INSERT INTO TB_VENDING_MACHINE_ISSUE
+		(VM_SEQ, TYPE, CODE, INFO, REG_DATE)
+		VALUE (#{vmSeq},#{type},#{code},#{info},DATE_FORMNAT(now(),'%Y%m%d%H%i%s'))
+	</insert>
+
+	<delete id="deleteVMIssueList_v2" parameterType="java.util.Map">
+		DELETE FROM TB_VENDING_MACHINE_ISSUE
+		WHERE 1=1
+		AND VM_SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+
+	<!--<delete id="deleteVM" parameterType="int">
+		DELETE FROM TB_VENDING_MACHINE
+		WHERE SEQ = #{seq}
+	</delete>-->
+
+
+
+
+
+
+
+
+</mapper>
+

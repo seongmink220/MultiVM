@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.StockMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.Stock" id="StockModel" autoMapping="true">
+		<result property="seq" column="SEQ"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="vmSeq" column="VM_SEQ"/>
+		<result property="productSeq" column="PRODUCT_SEQ"/>
+		<result property="productCount" column="COUNT"/>
+		<result property="slotNo" column="SLOT_NO"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+		<result property="modifyUserSeq" column="MODIFY_USER_SEQ"/>
+		<result property="vmId" column="VM_ID"/>
+		<result property="terminalId" column="TERMINAL_ID"/>
+		<result property="productName" column="PRODUCT_NAME"/>
+		<result property="productCode" column="PRODUCT_CODE"/>
+
+	</resultMap>
+
+	<insert id="insertStock" parameterType="java.util.Map">
+		INSERT INTO TB_STOCK
+		(SEQ, COMPANY_SEQ, ORGANIZATION_SEQ, VM_SEQ, PRODUCT_SEQ, COUNT,SLOT_NO, CREATE_DATE, CREATE_USER_SEQ, MODIFY_DATE)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{companySeq},#{organizationSeq},#{vmSeq}
+		     ,(SELECT DISTINCT TP.SEQ FROM TB_PRODUCT TP
+				WHERE TP.COMPANY_SEQ = #{companySeq} AND TP.ORGANIZATION_SEQ = #{organizationSeq} AND TP.CODE = #{productCode})
+		     ,(select IFNULL(SUM(COUNT),0) from TB_STORE
+		where VM_SEQ = #{vmSeq}
+		  and COL = #{slotNo} )-(select IFNULL(SUM(COUNT),0) from TB_RELEASE
+		where VM_SEQ = #{vmSeq}
+		  and COL = #{slotNo} and RELEASE_TYPE IN('R','S'))
+		     ,#{slotNo},now(), 0, now() from TB_STOCK
+	</insert>
+
+	<select id="getStockList" parameterType="java.util.Map" resultMap="StockModel">
+		SELECT vm.VM_ID, vm.TERMINAL_ID, vm.SEQ AS VM_SEQ, t.SLOT_NO, t.SEQ, t.PRODUCT_SEQ
+		,p.NAME AS PRODUCT_NAME, p.CODE AS PRODUCT_CODE
+		,t.COUNT
+		from TB_STOCK t
+		inner join TB_PRODUCT p on p.SEQ = t.PRODUCT_SEQ
+		inner join TB_VENDING_MACHINE vm on vm.SEQ = t.VM_SEQ AND vm.VISIBLE = 'Y'
+		<if test="auth==4">
+			and vm.USER_SEQ = #{userSeq}
+		</if>
+		where 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+			AND t.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND t.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+			AND vm.VM_ID =#{vmId}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND vm.SEQ =#{vmSeq}
+		</if>
+		<if test="slotNo!=null and !slotNo.equals('')">
+			AND t.SLOT_NO =#{slotNo}
+		</if>
+		<if test="productCode2!=null and !productCode2.equals('')">
+			AND t.PRODUCT_SEQ =( SELECT SEQ FROM TB_PRODUCT
+								WHERE COMPANY_SEQ = #{companySeq} AND ORGANIZATION_SEQ = #{organizationSeq}
+								AND CODE = #{productCode2} )
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('') and !terminalId.equalsIgnoreCase('전체')">
+			AND vm.TERMINAL_ID = #{terminalId}
+		</if>
+		<if test="searchType!=null and !searchType.equals('') and searchType.equalsIgnoreCase('1')">
+			AND p.NAME like CONCAT('%' ,IFNULL(#{searchValue},'') , '%')
+		</if>
+		<if test="searchType!=null and !searchType.equals('') and searchType.equalsIgnoreCase('2')">
+			AND p.CODE like CONCAT('%' ,IFNULL(#{searchValue},'') , '%')
+		</if>
+		<if test="searchType!=null and !searchType.equals('') and searchType.equalsIgnoreCase('3')">
+			AND t.SLOT_NO = #{searchValue}
+		</if>
+		ORDER BY vm.VM_ID, vm.TERMINAL_ID, t.SLOT_NO, p.CODE
+	</select>
+	<select id="getStockList_v2" parameterType="java.util.Map" resultMap="StockModel">
+		SELECT vm.VM_ID, vm.TERMINAL_ID, vm.SEQ AS VM_SEQ, t.SLOT_NO, t.SEQ
+		,p.NAME AS PRODUCT_NAME, p.CODE AS PRODUCT_CODE
+		,t.COUNT
+		from TB_STOCK t
+		left join TB_PRODUCT p on p.SEQ = t.PRODUCT_SEQ
+		inner join TB_VENDING_MACHINE vm on vm.SEQ = t.VM_SEQ AND vm.VISIBLE = 'Y'
+		where 1=1
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND vm.SEQ =#{vmSeq}
+		</if>
+		<if test="slotNo!=null and !slotNo.equals('') and slotNo!=0">
+			AND t.SLOT_NO =#{slotNo}
+		</if>
+		ORDER BY vm.VM_ID, vm.TERMINAL_ID, t.SLOT_NO, p.CODE
+	</select>
+
+
+	<select id="getStockInfo" parameterType="java.util.Map" resultMap="StockModel">
+		SELECT vm.VM_ID, vm.TERMINAL_ID, vm.SEQ AS VM_SEQ, t.SLOT_NO, t.SEQ
+		,p.NAME AS PRODUCT_NAME, p.CODE AS PRODUCT_CODE, t.PRODUCT_SEQ
+		,t.COUNT, t.COMPANY_SEQ, t.ORGANIZATION_SEQ
+		from TB_STOCK t
+		inner join TB_PRODUCT p on p.SEQ = t.PRODUCT_SEQ
+		inner join TB_VENDING_MACHINE vm on vm.SEQ = t.VM_SEQ AND vm.VISIBLE = 'Y'
+		where 1=1
+		<if test="seq!=null and !seq.equals('') and seq!=0">
+			AND t.SEQ = #{seq}
+		</if>
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+		AND t.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND t.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+			AND vm.VM_ID =#{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('') and !terminalId.equals('전체')">
+			AND vm.TERMINAL_ID = #{terminalId}
+		</if>
+		ORDER BY vm.VM_ID, vm.TERMINAL_ID, p.CODE
+	</select>
+	<update id="updateStock" parameterType="kr.co.ubcn.multivm.model.Release">
+		UPDATE TB_STOCK
+		SET
+			COUNT=#{editCount}
+			, MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{seq}
+	</update>
+
+	<delete id="deleteStockList" parameterType="java.util.Map">
+		DELETE FROM TB_STOCK
+		WHERE 1=1
+		<if test="productSeq!=null and !productSeq.equals('')">
+			AND PRODUCT_SEQ = #{productSeq}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('')">
+			AND VM_SEQ = #{vmSeq}
+		</if>
+	</delete>
+
+	<delete id="deleteStockList_v1" parameterType="java.util.Map">
+		DELETE FROM TB_STOCK
+		WHERE PRODUCT_SEQ = (SELECT SEQ from TB_PRODUCT
+								WHERE COMPANY_SEQ = #{companySeq}
+								AND ORGANIZATION_SEQ = #{organizationSeq}
+								AND CODE = #{productCode2})
+		<if test="vmSeq!=null and !vmSeq.equals('')">
+			AND VM_SEQ = #{vmSeq}
+		</if>
+	</delete>
+	<delete id="deleteStockList_v2" parameterType="java.util.Map">
+		DELETE FROM TB_STOCK
+		WHERE 1=1
+		AND VM_SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+
+	<update id="updateSlotProductStock" parameterType="java.util.Map">
+		UPDATE TB_STOCK
+		SET PRODUCT_SEQ =
+				(SELECT DISTINCT TS.PRODUCT_SEQ
+				 FROM TB_PRODUCT TP, TB_STOCK TS
+				 WHERE TP.SEQ = TS.PRODUCT_SEQ AND TP.COMPANY_SEQ = TS.COMPANY_SEQ AND TP.ORGANIZATION_SEQ = TS.ORGANIZATION_SEQ AND TP.COMPANY_SEQ = #{companySeq} AND TP.ORGANIZATION_SEQ = #{organizationSeq} AND TP.CODE = #{productCode})
+		  , MODIFY_DATE = SYSDATE(), MODIFY_USER_SEQ = '0'
+		WHERE VM_SEQ = #{vmSeq} AND SLOT_NO = #{slotNo}
+	</update>
+
+
+
+</mapper>

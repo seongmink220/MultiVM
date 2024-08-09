@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.MultivmLogMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.MultivmLog" id="MultivmLogModel" autoMapping="true">
+		<result property="seq" column="SEQ"/>
+		<result property="vmSeq" column="VM_SEQ"/>
+		<result property="vmId" column="VM_ID"/>
+		<result property="fileName" column="FILE_NAME"/>
+		<result property="regDate" column="REG_DATE"/>
+		<result property="createDate" column="CREATE_DATE"/>
+	</resultMap>
+
+	<select id="getLogInfo" parameterType="Integer" resultMap="MultivmLogModel">
+		SELECT l.*, vm.VM_ID AS VM_ID
+		FROM TB_LOG_FILE l
+				 INNER JOIN TB_VENDING_MACHINE vm ON l.VM_SEQ = vm.SEQ AND vm.VISIBLE = 'Y'
+		WHERE SEQ = #{seq}
+	</select>
+
+	<select id="getSearchLogList" parameterType="java.util.Map" resultMap="MultivmLogModel">
+		SELECT l.*, vm.VM_ID AS VM_ID
+		FROM TB_LOG_FILE l
+		INNER JOIN TB_VENDING_MACHINE vm ON l.VM_SEQ = vm.SEQ AND vm.VISIBLE = 'Y'
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+			AND vm.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND vm.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('') and vmId!=0">
+			AND vm.VM_ID = #{vmId}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND l.VM_SEQ = #{vmSeq}
+		</if>
+		<if test="sDate!=null and !sDate.equals('') and sDate!=0">
+			AND DATE_FORMAT(l.REG_DATE,'%Y%m%d')  BETWEEN #{sDate} AND #{eDate}
+		</if>
+		ORDER BY l.CREATE_DATE DESC
+	</select>
+
+	<insert id="insertLog" parameterType="kr.co.ubcn.multivm.model.MultivmLog">
+		INSERT INTO TB_LOG_FILE
+		(SEQ, VM_SEQ, FILE_NAME, REG_DATE,CREATE_DATE)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{vmSeq},#{fileName}, #{regDate}, now() from TB_LOG_FILE
+	</insert>
+
+	<update id="modifyLog" parameterType="kr.co.ubcn.multivm.model.MultivmLog">
+		UPDATE TB_LOG_FILE
+		SET FILE_NAME=#{fileName}
+		WHERE SEQ = #{seq}
+	</update>
+	<delete id="deleteLog" parameterType="int">
+		DELETE FROM TB_LOG_FILE
+		WHERE SEQ = #{seq}
+	</delete>
+
+
+
+</mapper>

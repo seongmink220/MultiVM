@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.SalesMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.Sales" id="SalesModel" autoMapping="true">
+		<result property="transactionNo" column="TRANSACTION_NO"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="vmId" column="VM_ID"/>
+		<result property="terminalId" column="TERMINAL_ID"/>
+		<result property="transactionDate" column="TRANSACTION_DATE"/>
+		<result property="transactionTime" column="TRANSACTION_TIME"/>
+		<result property="productCode" column="PRODUCT_CODE"/>
+		<result property="amount" column="AMOUNT"/>
+		<result property="slotNo" column="SLOT_NO"/>
+		<result property="itemCount" column="ITEM_COUNT"/>
+		<result property="receiveDate" column="RECEIVE_DATE"/>
+		<result property="payType" column="PAY_TYPE"/>
+		<result property="payStep" column="PAY_STEP"/>
+		<result property="cancelDate" column="CANCEL_DATE"/>
+		<result property="cancelTime" column="CANCEL_TIME"/>
+		<result property="productName" column="PRODUCT_NAME"/>
+		<result property="sDate" column="START_DATE"/>
+		<result property="eDate" column="END_DATE"/>
+		<result property="organizationName" column="ORGANIZATION_NAME"/>
+		<result property="place" column="PLACE"/>
+		<result property="userSeq" column="USER_SEQ"/>
+
+	</resultMap>
+
+	<select id="getSalesList" parameterType="java.util.Map" resultMap="SalesModel">
+		SELECT s.TRANSACTION_NO, s.VM_ID, s.TERMINAL_ID, DATE_FORMAT(STR_TO_DATE(s.TRANSACTION_DATE,'%Y%m%d'),'%Y.%m.%d') AS TRANSACTION_DATE
+		     , CONCAT(LEFT(s.TRANSACTION_TIME,2),':',MID(s.TRANSACTION_TIME,3,2),':',RIGHT(s.TRANSACTION_TIME,2)) AS TRANSACTION_TIME
+		     , s.PRODUCT_CODE, s.AMOUNT, s.SLOT_NO
+		, (SELECT COUNT(*) FROM TB_SALES_PRODUCT WHERE TRANSACTION_NO = s.TRANSACTION_NO) AS ITEM_COUNT
+		     , p.NAME AS PRODUCT_NAME, s.RECEIVE_DATE
+		     , IFNULL(s.PAY_TYPE,'') AS PAY_TYPE, IFNULL(s.PAY_STEP,'01') AS PAY_STEP, IFNULL(DATE_FORMAT(STR_TO_DATE(CONCAT(s.CANCEL_DATE,s.CANCEL_TIME),'%Y%m%d%H%i%s'),'%Y.%m.%d %H:%i:%s'),'') AS CANCEL_DATE
+		FROM TB_SALES s
+		INNER JOIN TB_PRODUCT p ON s.COMPANY_SEQ = p.COMPANY_SEQ
+		AND s.ORGANIZATION_SEQ = p.ORGANIZATION_SEQ
+		AND s.PRODUCT_CODE = p.CODE
+		<if test="auth==4">
+		INNER JOIN TB_VENDING_MACHINE vm ON s.VM_ID = vm.VM_ID AND s.TERMINAL_ID = vm.TERMINAL_ID AND s.ORGANIZATION_SEQ = vm.ORGANIZATION_SEQ AND vm.USER_SEQ = #{userSeq}
+		</if>
+		WHERE s.COMPANY_SEQ = #{companySeq}
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+		AND s.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+		AND s.VM_ID = #{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('') and !terminalId.equals('전체')">
+			AND s.TERMINAL_ID = #{terminalId}
+		</if>
+		<if test="productNameList!=null and !productNameList.equals('')">
+		    AND (p.CODE REGEXP
+			<foreach item="item" index="index" collection="productNameList" separator="|">
+		        #{item}
+			</foreach>
+		      OR p.NAME REGEXP
+			<foreach item="item" index="index" collection="productNameList"  separator="|">
+				#{item}
+			</foreach>
+			 )
+		</if>
+		AND s.TRANSACTION_DATE BETWEEN #{sDate} AND #{eDate}
+		ORDER BY s.TRANSACTION_DATE DESC, s.TRANSACTION_TIME DESC, s.VM_ID
+	</select>
+
+	<select id="getDailySalesList" parameterType="java.util.Map" resultMap="SalesModel">
+		SELECT CONCAT(MID(s.TRANSACTION_DATE,3,2),'/',MID(s.TRANSACTION_DATE,5,2),'/',RIGHT(s.TRANSACTION_DATE,2)) AS TRANSACTION_DATE
+		,s.VM_ID, s.TERMINAL_ID, IFNULL(SUM(sp.COUNT),0) AS ITEM_COUNT,IFNULL(SUM(sp.PRODUCT_AMOUNT*sp.COUNT),0)AS AMOUNT
+		,vm.PLACE, s.ORGANIZATION_SEQ, (SELECT NAME FROM TB_ORGANIZATION WHERE SEQ = s.ORGANIZATION_SEQ) AS ORGANIZATION_NAME
+		,s.RECEIVE_DATE, s.PAY_TYPE, s.PAY_STEP, s.CANCEL_DATE, s.CANCEL_TIME
+		FROM TB_SALES s
+		INNER JOIN TB_SALES_PRODUCT sp ON s.TRANSACTION_NO = sp.TRANSACTION_NO
+		LEFT JOIN TB_PRODUCT p ON s.COMPANY_SEQ = p.COMPANY_SEQ AND s.ORGANIZATION_SEQ = p.ORGANIZATION_SEQ AND s.PRODUCT_CODE = p.CODE
+		INNER JOIN TB_VENDING_MACHINE vm ON s.VM_ID = vm.VM_ID AND s.TERMINAL_ID = vm.TERMINAL_ID AND s.ORGANIZATION_SEQ = vm.ORGANIZATION_SEQ
+		<if test="auth==4">
+		AND vm.USER_SEQ = #{userSeq}
+		</if>
+		WHERE s.COMPANY_SEQ = #{companySeq}
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND s.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		AND s.TRANSACTION_DATE BETWEEN #{sDate} AND #{eDate}
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+		  AND s.VM_ID =#{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('') and !terminalId.equals('전체')">
+			AND s.TERMINAL_ID = #{terminalId}
+		</if>
+		AND sp.SHIP_RESULT = 'T'
+		AND s.PAY_STEP IN ('01','02','03')
+		GROUP BY s.TERMINAL_ID, s.VM_ID,s.TRANSACTION_DATE
+		ORDER BY s.TRANSACTION_DATE DESC, s.VM_ID, s.TERMINAL_ID
+	</select>
+	<!--<select id="getDailySalesProductList" parameterType="java.util.Map" resultMap="SalesModel">
+		SELECT IFNULL(p.NAME,'미등록상품') AS PRODUCT_NAME, IFNULL(p.CODE,'') AS PRODUCT_CODE
+		,s.VM_ID, s.TERMINAL_ID, COUNT(s.TRANSACTION_NO) AS ITEM_COUNT,SUM(s.AMOUNT)AS AMOUNT
+		FROM TB_SALES s
+		INNER JOIN TB_SALES_PRODUCT sp ON s.TRANSACTION_NO = sp.TRANSACTION_NO
+		LEFT JOIN TB_PRODUCT p ON s.COMPANY_SEQ = p.COMPANY_SEQ AND s.ORGANIZATION_SEQ = p.ORGANIZATION_SEQ AND sp.PRODUCT_CODE = p.CODE
+		WHERE s.COMPANY_SEQ = #{companySeq}
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND s.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		AND s.TRANSACTION_DATE BETWEEN #{sDate} AND #{eDate}
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+			AND s.VM_ID =#{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('') and !terminalId.equals('전체')">
+			AND s.TERMINAL_ID = #{terminalId}
+		</if>
+		<if test="productNameList!=null and !productNameList.equals('')">
+			AND (p.CODE REGEXP
+			<foreach item="item" collection="productNameList" separator="|">
+				${item}
+			</foreach>
+			OR p.NAME REGEXP
+			<foreach item="item" collection="productNameList"  separator="|">
+				${item}
+			</foreach>
+			)
+			AND sp.PRODUCT_CODE IS NOT NULL
+		</if>
+		GROUP BY s.TERMINAL_ID, s.VM_ID,sp.PRODUCT_CODE
+		ORDER BY sp.PRODUCT_CODE, s.VM_ID, s.TERMINAL_ID
+	</select>-->
+	<select id="getDailySalesProductList" parameterType="java.util.Map" resultMap="SalesModel">
+		SELECT IFNULL(p.NAME,'미등록상품') AS PRODUCT_NAME, IFNULL(p.CODE,' ') AS PRODUCT_CODE
+		,s.VM_ID, s.TERMINAL_ID, SUM(sp.COUNT) AS ITEM_COUNT,sp.PRODUCT_AMOUNT*SUM(sp.COUNT) AS AMOUNT
+		,vm.PLACE, (SELECT NAME FROM TB_ORGANIZATION WHERE SEQ = s.ORGANIZATION_SEQ) AS ORGANIZATION_NAME
+		,s.RECEIVE_DATE, s.PAY_TYPE, s.PAY_STEP, s.CANCEL_DATE, s.CANCEL_TIME
+		FROM TB_SALES_PRODUCT sp
+		INNER JOIN TB_SALES s ON s.TRANSACTION_NO = sp.TRANSACTION_NO
+		LEFT JOIN TB_PRODUCT p ON s.COMPANY_SEQ = p.COMPANY_SEQ AND s.ORGANIZATION_SEQ = p.ORGANIZATION_SEQ AND sp.PRODUCT_CODE = p.CODE
+		INNER JOIN TB_VENDING_MACHINE vm ON s.VM_ID = vm.VM_ID AND s.TERMINAL_ID = vm.TERMINAL_ID AND s.ORGANIZATION_SEQ = vm.ORGANIZATION_SEQ
+		<if test="auth==4">
+			AND vm.USER_SEQ = #{userSeq}
+		</if>
+		WHERE s.COMPANY_SEQ = #{companySeq}
+		AND sp.SHIP_RESULT = 'T'
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND s.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		AND s.TRANSACTION_DATE BETWEEN #{sDate} AND #{eDate}
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+			AND s.VM_ID =#{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('') and !terminalId.equals('전체')">
+			AND s.TERMINAL_ID = #{terminalId}
+		</if>
+		<if test="productNameList!=null and !productNameList.equals('')">
+			AND (p.CODE REGEXP #{productNameList}
+
+			OR p.NAME REGEXP
+			#{productNameList}
+			)
+			AND sp.PRODUCT_CODE IS NOT NULL
+		</if>
+		AND s.PAY_STEP IN ('01','02','03')
+		GROUP BY s.TERMINAL_ID, s.VM_ID,sp.PRODUCT_CODE, sp.PRODUCT_AMOUNT
+		ORDER BY sp.PRODUCT_CODE, s.VM_ID, s.TERMINAL_ID
+	</select>
+
+
+	<!--<select id="getDailySalesSubTotal" parameterType="kr.co.ubcn.multivm.model.Sales" resultMap="SalesModel">
+		SELECT CONCAT(MID(TRANSACTION_DATE,3,2),'/',MID(TRANSACTION_DATE,5,2),'/',RIGHT(TRANSACTION_DATE,2)) AS TRANSACTION_DATE
+		,COUNT(TRANSACTION_NO) AS ITEM_COUNT,SUM(AMOUNT)AS AMOUNT  FROM TB_SALES
+		WHERE COMPANY_SEQ = #{companySeq}
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		AND TRANSACTION_DATE BETWEEN #{sDate} AND #{eDate}
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+			AND VM_ID =#{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('') and !terminalId.equals('전체')">
+			AND TERMINAL_ID = #{terminalId}
+		</if>
+		GROUP BY TRANSACTION_DATE
+		ORDER BY TRANSACTION_DATE
+	</select>-->
+
+	<select id="getIndexSalesList" parameterType="kr.co.ubcn.multivm.model.Sales" resultMap="SalesModel">
+		SELECT vm.PLACE AS PLACE
+		,s.VM_ID
+		,COUNT(DISTINCT s.TRANSACTION_NO) AS ITEM_COUNT
+		,SUM(sp.PRODUCT_AMOUNT*sp.COUNT) AS AMOUNT
+		FROM TB_SALES s
+		INNER JOIN TB_SALES_PRODUCT sp ON s.TRANSACTION_NO = sp.TRANSACTION_NO
+		INNER JOIN TB_VENDING_MACHINE vm ON s.ORGANIZATION_SEQ=vm.ORGANIZATION_SEQ
+		AND s.VM_ID = vm.VM_ID
+		AND s.TERMINAL_ID = vm.TERMINAL_ID
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+		AND s.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND s.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('') and !userSeq.equals('전체')">
+			AND s.VM_ID IN(select VM_ID FROM TB_VENDING_MACHINE where USER_SEQ = #{userSeq})
+		</if>
+		AND sp.SHIP_RESULT = 'T'
+		AND s.PAY_STEP IN ('01','02','03')
+		AND TRANSACTION_DATE = DATE_FORMAT(now(),'%Y%m%d')
+		GROUP BY s.VM_ID, s.TRANSACTION_DATE
+		ORDER BY s.TRANSACTION_DATE DESC, s.VM_ID
+	</select>
+
+	<select id="getIndexAmount" parameterType="kr.co.ubcn.multivm.model.Sales" resultType="int">
+		SELECT NVL(SUM(sp.PRODUCT_AMOUNT*sp.COUNT),0) AS AMOUNT  FROM TB_SALES s
+		INNER JOIN TB_SALES_PRODUCT sp ON s.TRANSACTION_NO = sp.TRANSACTION_NO
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+			AND s.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND s.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+			AND s.VM_ID =#{vmId}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('')">
+			AND s.VM_ID IN (SELECT VM_ID FROM TB_VENDING_MACHINE WHERE USER_SEQ = #{userSeq})
+		</if>
+		AND sp.SHIP_RESULT = 'T'
+		AND s.PAY_STEP IN ('01','02','03')
+		AND s.TRANSACTION_DATE = #{transactionDate}
+	</select>
+
+	<select id="getIndexWeeklyAmount" parameterType="kr.co.ubcn.multivm.model.Sales" resultMap="SalesModel">
+		select CONCAT(DATE_FORMAT(s.TRANSACTION_DATE,'%m.%d'),SUBSTR(_UTF8'일월화수목금토', DAYOFWEEK(s.TRANSACTION_DATE), 1)) AS TRANSACTION_DATE
+		,IFNULL(SUM(sp.PRODUCT_AMOUNT*sp.COUNT),0) AS AMOUNT, IFNULL(SUM(sp.COUNT),0) AS ITEM_COUNT
+		FROM TB_SALES_PRODUCT sp
+		INNER JOIN TB_SALES s ON s.TRANSACTION_NO = sp.TRANSACTION_NO
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+			AND s.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND s.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+			AND s.VM_ID =#{vmId}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('')">
+			AND s.VM_ID IN (SELECT VM_ID FROM TB_VENDING_MACHINE WHERE USER_SEQ = #{userSeq})
+		</if>
+		AND sp.SHIP_RESULT = 'T'
+		AND s.PAY_STEP IN ('01','02','03')
+		and s.TRANSACTION_DATE between DATE_FORMAT(DATE_ADD(NOW(), INTERVAL -6 DAY),'%Y%m%d') and DATE_FORMAT(now(),'%Y%m%d')
+		group by s.TRANSACTION_DATE
+		order by s.TRANSACTION_DATE
+	</select>
+
+	<select id="checkTransactionNo" parameterType="String" resultMap="SalesModel">
+		select * FROM TB_SALES
+		WHERE TRANSACTION_NO =#{transactionNo}
+	</select>
+
+
+</mapper>

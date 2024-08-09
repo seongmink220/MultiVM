@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.FirmwareMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.Firmware" id="FirmwareModel" autoMapping="true">
+		<result property="seq" column="SEQ"/>
+		<result property="currVersion" column="CURR_VERSION"/>
+		<result property="content" column="CONTENT"/>
+		<result property="fileName" column="FILE_NAME"/>
+		<result property="sha256" column="SHA256"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+	</resultMap>
+
+	<select id="getFirmwareInfo" parameterType="Integer" resultMap="FirmwareModel">
+		SELECT *
+		FROM TB_FIRMWARE
+		WHERE 1=1
+		AND SEQ = #{seq}
+
+	</select>
+
+	<select id="getSearchFirmwareList" parameterType="java.util.Map" resultMap="FirmwareModel">
+		SELECT *
+		FROM TB_FIRMWARE
+		WHERE 1=1
+		<if test="seq!=null and !seq.equals('') and seq!=0">
+		AND SEQ = #{seq}
+		</if>
+		ORDER BY CREATE_DATE DESC
+	</select>
+
+
+	<insert id="insertFirmware" parameterType="kr.co.ubcn.multivm.model.Firmware">
+		INSERT INTO TB_FIRMWARE
+		(SEQ, CURR_VERSION, CONTENT, FILE_NAME, SHA256, CREATE_DATE, CREATE_USER_SEQ)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{currVersion},#{content},#{fileName},#{sha256}, now(), #{createUserSeq} from TB_FIRMWARE
+	</insert>
+
+	<!--<update id="modifyFirmware" parameterType="kr.co.ubcn.multivm.model.Firmware">
+		UPDATE TB_FIRMWARE
+		SET CURR_VERSION=#{companySeq}, DESC=#{organizationSeq}
+		  , ADV_TITLE=#{advTitle}, ADV_CONTENT=#{advContent}, ADV_OWNER=#{advOwner}, ADV_FILE=#{advFile}
+		  , MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{seq}
+	</update>-->
+	<delete id="deleteFirmware" parameterType="int">
+		DELETE FROM TB_FIRMWARE
+		WHERE SEQ = #{seq}
+	</delete>
+
+	<delete id="deleteFirmwareList" parameterType="java.util.Map">
+		DELETE FROM TB_FIRMWARE
+		WHERE SEQ IN
+		<foreach collection="delete_programList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+
+	<update id="insertProgramToVM" parameterType="java.util.Map">
+		UPDATE TB_VENDING_MACHINE
+		SET
+			FIRMWARE_SEQ = #{firmwareSeq}, FIRMWARE_STATUS =null
+		  , MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE 1=1
+		AND SEQ IN
+			<foreach collection="insert_vmList" item="type" open="(" close=")" separator=",">
+				#{type}
+			</foreach>
+	</update>
+	<update id="deleteProgramToVM" parameterType="java.util.Map">
+		UPDATE TB_VENDING_MACHINE
+		SET
+		FIRMWARE_SEQ = #{firmwareSeq}, FIRMWARE_STATUS =null
+		, MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE 1=1
+		AND FIRMWARE_SEQ IN
+		<foreach collection="delete_programList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</update>
+
+
+
+
+
+
+</mapper>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.CompanyMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.Company" id="CompanyModel" autoMapping="true">
+		<result property="seq" column="SEQ"/>
+		<result property="name" column="NAME"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+		<result property="modifyUserSeq" column="MODIFY_USER_SEQ"/>
+
+	</resultMap>
+
+	<select id="getCompanyInfo" parameterType="Integer" resultMap="CompanyModel">
+		SELECT *
+		FROM TB_COMPANY
+		WHERE SEQ = #{seq}
+	</select>
+
+	<select id="getCompanyName" parameterType="Integer" resultType="String">
+		SELECT NAME AS name
+		FROM TB_COMPANY
+		WHERE SEQ = #{seq}
+	</select>
+	<select id="getAllCompanyList" resultMap="CompanyModel">
+		SELECT SEQ, NAME
+		FROM TB_COMPANY
+		ORDER BY NAME
+	</select>
+
+	<select id="getAllCompanyList_admin" resultMap="CompanyModel">
+		SELECT SEQ, NAME, DATE_FORMAT(CREATE_DATE,'%Y-%m-%d %H:%i:%S') AS CREATE_DATE
+		FROM TB_COMPANY
+		ORDER BY CREATE_DATE DESC
+	</select>
+
+
+	<insert id="insertCompany" parameterType="kr.co.ubcn.multivm.model.Company">
+		INSERT INTO TB_COMPANY
+			(SEQ, NAME, CREATE_DATE,CREATE_USER_SEQ)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{name},now(), #{createUserSeq} from TB_COMPANY
+	</insert>
+
+	<update id="modifyCompany" parameterType="kr.co.ubcn.multivm.model.Company">
+		UPDATE TB_COMPANY
+		SET NAME=#{name}
+		  , MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{seq}
+	</update>
+
+
+	<delete id="deleteCompany" parameterType="int">
+		DELETE FROM TB_COMPANY
+		WHERE SEQ = #{seq}
+	</delete>
+
+	<delete id="deleteCompany_v2" parameterType="java.util.Map">
+		DELETE FROM TB_COMPANY
+		WHERE 1=1
+		AND SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+
+	<select id="checkDupCompanyName" parameterType="String" resultMap="CompanyModel">
+		SELECT *
+		FROM TB_COMPANY
+		WHERE NAME = #{name}
+	</select>
+
+
+
+</mapper>

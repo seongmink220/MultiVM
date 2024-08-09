@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.VendingMachineCurrProductMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.VendingMachineCurrProduct" id="VendingMachineCurrProductModel" autoMapping="true">
+		<result property="vmSeq" column="VM_SEQ"/>
+		<result property="slotNo" column="SLOT_NO"/>
+		<result property="productCount" column="PRODUCT_COUNT"/>
+		<result property="enable" column="ENABLE"/>
+		<result property="productCode" column="PRODUCT_CODE"/>
+		<result property="productName" column="PRODUCT_NAME"/>
+		<result property="productImage" column="PRODUCT_IMAGE"/>
+		<result property="productDetail" column="PRODUCT_DETAIL"/>
+		<result property="productPrice" column="PRODUCT_PRICE"/>
+		<result property="isGlass" column="IS_GLASS"/>
+
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="companyName" column="COMPANY_NAME"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="organizationName" column="ORGANIZATION_NAME"/>
+
+		<result property="vmId" column="VM_ID"/>
+		<result property="place" column="PLACE"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+	</resultMap>
+
+	<select id="getSearchVMCurrProduct" parameterType="java.util.Map" resultMap="VendingMachineCurrProductModel">
+		SELECT vmp.VM_SEQ, vmcp.SLOT_NO, vmp.PRODUCT_CODE,vmp.PRODUCT_PRICE
+		,p.NAME AS PRODUCT_NAME
+		,CASE WHEN P.PRODUCT_IMAGE IS NULL THEN 'http://devmultivm.ubcn.co.kr/image/product/default.png'
+		ELSE P.PRODUCT_IMAGE END AS PRODUCT_IMAGE, p.IS_GLASS
+		FROM TB_VENDING_MACHINE_CURR_PRODUCT vmcp
+		INNER JOIN TB_VENDING_MACHINE vm
+		ON vmcp.VM_SEQ = vm.SEQ AND vm.VISIBLE = 'Y'
+		INNER JOIN TB_VENDING_MACHINE_PRODUCT vmp
+		ON vmcp.VM_SEQ = vmp.VM_SEQ AND vmcp.PRODUCT_CODE = vmp.PRODUCT_CODE
+		INNER JOIN TB_PRODUCT p
+		ON vm.ORGANIZATION_SEQ = p.ORGANIZATION_SEQ AND vmcp.PRODUCT_CODE = p.CODE
+		WHERE 1=1
+		<if test="vmSeq!=null and !vmSeq.equals('')">
+			AND vmcp.VM_SEQ = #{vmSeq}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('')">
+			AND vm.USER_SEQ = #{userSeq}
+		</if>
+		AND (vmp.SLOT_NO IS NULL OR NOT vmp.SLOT_NO = -1)
+		AND vmp.VISIBLE = 'Y'
+		ORDER BY vmp.PRODUCT_CODE
+	</select>
+	<select id="getVMCurrProductList" parameterType="java.util.Map" resultMap="VendingMachineCurrProductModel">
+		SELECT vmp.VM_SEQ, vmcp.SLOT_NO, vmp.PRODUCT_CODE, st.COUNT AS PRODUCT_COUNT,vmp.PRODUCT_PRICE
+		,p.NAME AS PRODUCT_NAME
+		,CASE WHEN P.PRODUCT_IMAGE IS NULL THEN 'http://devmultivm.ubcn.co.kr/image/product/default.png'
+		ELSE P.PRODUCT_IMAGE END AS PRODUCT_IMAGE
+		, vmcp.ENABLE, DATE_FORMAT(vmcp.MODIFY_DATE,'%Y.%m.%d. %H:%i:%S') AS MODIFY_DATE
+		FROM TB_VENDING_MACHINE_CURR_PRODUCT vmcp
+		INNER JOIN TB_VENDING_MACHINE vm
+		ON vmcp.VM_SEQ = vm.SEQ AND vm.VISIBLE = 'Y'
+		INNER JOIN TB_VENDING_MACHINE_PRODUCT vmp
+		ON vmcp.VM_SEQ = vmp.VM_SEQ AND vmcp.PRODUCT_CODE = vmp.PRODUCT_CODE
+		INNER JOIN TB_PRODUCT p
+		ON vm.ORGANIZATION_SEQ = p.ORGANIZATION_SEQ AND vmcp.PRODUCT_CODE = p.CODE
+		INNER JOIN TB_STOCK st
+		ON vmcp.VM_SEQ = st.VM_SEQ and vmcp.SLOT_NO = st.SLOT_NO
+		WHERE 1=1
+		<if test="vmSeq!=null and !vmSeq.equals('')">
+			AND vmcp.VM_SEQ = #{vmSeq}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('')">
+			AND vm.USER_SEQ = #{userSeq}
+		</if>
+		<if test="floor1!=null and !floor1.equals('')">
+			AND vmcp.SLOT_NO BETWEEN 1 AND 9
+		</if>
+		<if test="floor2!=null and !floor2.equals('')">
+			AND vmcp.SLOT_NO BETWEEN 21 AND 29
+		</if>
+		<if test="floor3!=null and !floor3.equals('')">
+			AND vmcp.SLOT_NO BETWEEN 41 AND 49
+		</if>
+		<if test="floor4!=null and !floor4.equals('')">
+			AND vmcp.SLOT_NO BETWEEN 61 AND 69
+		</if>
+		<if test="floor5!=null and !floor5.equals('')">
+			AND vmcp.SLOT_NO BETWEEN 81 AND 89
+		</if>
+		AND (vmp.SLOT_NO IS NULL OR NOT vmp.SLOT_NO = -1)
+		AND vmp.VISIBLE = 'Y'
+		AND vm.VISIBLE = 'Y'
+		ORDER BY vmcp.SLOT_NO, vmp.PRODUCT_CODE
+	</select>
+
+	<select id="getVMCurrProductFloor0" parameterType="int" resultMap="VendingMachineCurrProductModel">
+		SELECT SUM(st.COUNT) AS PRODUCT_COUNT, vmcp.VM_SEQ, vmcp.SLOT_NO, vmp.PRODUCT_CODE,vmp.PRODUCT_PRICE
+		,p.NAME AS PRODUCT_NAME
+		,CASE WHEN P.PRODUCT_IMAGE IS NULL THEN 'http://devmultivm.ubcn.co.kr/image/product/default.png'
+		 ELSE P.PRODUCT_IMAGE END AS PRODUCT_IMAGE
+		, p.IS_GLASS, DATE_FORMAT(vmcp.MODIFY_DATE,'%Y.%m.%d. %H:%i:%S') AS MODIFY_DATE
+
+		FROM TB_VENDING_MACHINE_CURR_PRODUCT vmcp
+		INNER JOIN TB_VENDING_MACHINE vm
+		ON vmcp.VM_SEQ = vm.SEQ AND vm.VISIBLE = 'Y'
+		INNER JOIN TB_VENDING_MACHINE_PRODUCT vmp
+		ON vmcp.VM_SEQ = vmp.VM_SEQ AND vmcp.PRODUCT_CODE = vmp.PRODUCT_CODE
+		INNER JOIN TB_PRODUCT p
+		ON vm.ORGANIZATION_SEQ = p.ORGANIZATION_SEQ AND vmcp.PRODUCT_CODE = p.CODE
+		INNER JOIN TB_STOCK st
+		ON vmcp.VM_SEQ = st.VM_SEQ and vmcp.SLOT_NO = st.SLOT_NO
+		WHERE 1=1
+
+		AND vmcp.VM_SEQ = #{vmSeq}
+
+		AND (vmp.SLOT_NO IS NULL OR NOT vmp.SLOT_NO = -1)
+		AND vmp.VISIBLE = 'Y'
+		GROUP BY vmp.PRODUCT_CODE
+		ORDER BY vmcp.SLOT_NO, vmp.PRODUCT_CODE
+	</select>
+	<delete id="deleteSlotInfo" parameterType="int">
+		DELETE FROM TB_VENDING_MACHINE_CURR_PRODUCT
+		WHERE VM_SEQ = #{vmSeq}
+	</delete>
+	<insert id="insertSlotInfo" parameterType="java.util.Map">
+		INSERT INTO TB_VENDING_MACHINE_CURR_PRODUCT
+		(VM_SEQ, PRODUCT_CODE, SLOT_NO, ENABLE,MODIFY_DATE)
+		VALUE
+		<foreach item="item" index="index" collection="list" separator=",">
+			(#{item.vmSeq},#{item.productCode},#{item.slotNo},#{item.enable}, now())
+		</foreach>
+	</insert>
+
+	<delete id="deleteSlotInfo_v2" parameterType="java.util.Map">
+		DELETE FROM TB_VENDING_MACHINE_CURR_PRODUCT
+		WHERE 1=1
+		AND VM_SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+
+	<update id="setSlotEnable" parameterType="java.util.Map">
+		UPDATE TB_VENDING_MACHINE_CURR_PRODUCT
+		SET
+			ENABLE = 'F'
+		  , MODIFY_DATE=now()
+		WHERE VM_SEQ = #{vmSeq} AND SLOT_NO = #{slotNo}
+	</update>
+
+	<select id="getVMCurrProductUploadDateTime" parameterType="String" resultMap="VendingMachineCurrProductModel">
+		SELECT DATE_FORMAT(MODIFY_DATE,'%Y%m%d%H%i%S') AS MODIFY_DATE
+		FROM TB_VENDING_MACHINE_CURR_PRODUCT vmcp
+		WHERE VM_SEQ = #{vmSeq}
+	</select>
+
+
+
+
+</mapper>
+

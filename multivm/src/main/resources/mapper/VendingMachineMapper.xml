@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.VendingMachineMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.VendingMachine" id="VendingMachineModel" autoMapping="true">
+		<result property="seq" column="SEQ"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="companyName" column="COMPANY_NAME"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="organizationName" column="ORGANIZATION_NAME"/>
+		<result property="userSeq" column="USER_SEQ"/>
+		<result property="userName" column="USER_NAME"/>
+		<result property="userId" column="USER_ID"/>
+		<result property="vmId" column="VM_ID"/>
+		<result property="terminalId" column="TERMINAL_ID"/>
+		<result property="place" column="PLACE"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+		<result property="modifyUserSeq" column="MODIFY_USER_SEQ"/>
+		<result property="currVersion" column="CURR_VERSION"/>
+		<result property="firmwareSeq" column="FIRMWARE_SEQ"/>
+		<result property="firmwareStatus" column="FIRMWARE_STATUS"/>
+		<result property="advSeq" column="ADV_SEQ"/>
+		<result property="visible" column="VISIBLE"/>
+		<result property="vmModel" column="VM_MODEL"/>
+	</resultMap>
+
+	<select id="getSearchVM" parameterType="java.util.Map" resultMap="VendingMachineModel">
+		SELECT VM.*, C.NAME AS COMPANY_NAME, ORG.NAME AS ORGANIZATION_NAME, IFNULL(F.CURR_VERSION,'') AS CURR_VERSION
+		FROM TB_VENDING_MACHINE VM
+		INNER JOIN TB_COMPANY C
+		ON VM.COMPANY_SEQ = C.SEQ
+		LEFT JOIN TB_FIRMWARE F
+		ON VM.FIRMWARE_SEQ = F.SEQ
+		INNER JOIN TB_ORGANIZATION ORG
+		ON VM.ORGANIZATION_SEQ = ORG.SEQ
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+		AND VM.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+		AND VM.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('') and vmId!=0">
+			AND VM.VM_ID = #{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('') and terminalId!=0">
+			AND VM.TERMINAL_ID = #{terminalId}
+		</if>
+		<if test="place!=null and !place.equals('')">
+			AND VM.PLACE = #{place}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('') and userSeq!=0">
+			AND VM.USER_SEQ = #{userSeq}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND VM.SEQ = #{vmSeq}
+		</if>
+		<if test="firmwareSeq!=null and !firmwareSeq.equals('') and firmwareSeq!=0">
+			AND VM.FIRMWARE_SEQ = #{firmwareSeq}
+		</if>
+		AND VM.VISIBLE = 'Y'
+		ORDER BY ORG.NAME, VM.SEQ desc
+	</select>
+	<select id="getSearchVM2" parameterType="java.util.Map" resultMap="VendingMachineModel">
+		SELECT VM.*, C.NAME AS COMPANY_NAME, ORG.NAME AS ORGANIZATION_NAME,U.NAME AS USER_NAME, IFNULL(F.CURR_VERSION,'') AS CURR_VERSION
+		FROM TB_VENDING_MACHINE VM
+		INNER JOIN TB_COMPANY C
+		ON VM.COMPANY_SEQ = C.SEQ
+		INNER JOIN TB_ORGANIZATION ORG
+		ON VM.ORGANIZATION_SEQ = ORG.SEQ
+		LEFT JOIN TB_FIRMWARE F
+		ON VM.FIRMWARE_SEQ = F.SEQ
+		LEFT JOIN TB_USER U
+		ON VM.USER_SEQ = U.SEQ
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+		AND VM.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND VM.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('')">
+			AND VM.VM_ID = #{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('')">
+			AND VM.TERMINAL_ID = #{terminalId}
+		</if>
+		<if test="place!=null and !place.equals('')">
+			AND VM.PLACE = #{place}
+		</if>
+		<if test="auth == 4">
+			AND VM.USER_SEQ = #{userSeq}
+		</if>
+		AND VM.VISIBLE = 'Y'
+		ORDER BY VM.SEQ desc
+	</select>
+
+
+	<select id="getUserVM" parameterType="java.util.Map" resultMap="VendingMachineModel">
+		SELECT VM.*, COM.NAME AS COMPANY_NAME, ORG.NAME AS ORGANIZATION_NAME,U.NAME AS USER_NAME,U.ID AS USER_ID, F.CURR_VERSION
+		FROM TB_VENDING_MACHINE VM
+		INNER JOIN TB_COMPANY COM
+		ON COM.SEQ = VM.COMPANY_SEQ
+		INNER JOIN TB_ORGANIZATION ORG
+		ON VM.ORGANIZATION_SEQ = ORG.SEQ
+		LEFT JOIN TB_FIRMWARE F
+		ON VM.FIRMWARE_SEQ = F.SEQ
+		LEFT JOIN TB_USER U
+		ON VM.USER_SEQ = U.SEQ
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('')">
+		AND VM.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+		AND VM.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('')">
+			AND VM.USER_SEQ = #{userSeq}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('')">
+			AND VM.SEQ = #{vmSeq}
+		</if>
+		<if test="vmSeq2!=null and !vmSeq2.equals('')">
+			AND VM.SEQ = #{vmSeq2}
+		</if>
+		<if test="vmId!=null and !vmId.equals('')">
+			AND VM.VM_ID = #{vmId}
+		</if>
+		AND VM.VISIBLE = 'Y'
+	</select>
+
+	<select id="getUserVMList" parameterType="java.util.Map" resultMap="VendingMachineModel">
+		SELECT *
+		FROM TB_VENDING_MACHINE VM
+		WHERE VM.COMPANY_SEQ = #{companySeq}
+		<if test="vmId!=null and !vmId.equals('')">
+			AND VM.VM_ID = #{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('')">
+			AND VM.TERMINAL_ID = #{terminalId}
+		</if>
+		<if test="place!=null and !place.equals('')">
+			AND VM.PLACE = #{place}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('')">
+			AND VM.USER_SEQ = #{userSeq}
+		</if>
+		AND VM.VISIBLE = 'Y'
+		ORDER BY VM.PLACE, VM.VM_ID
+	</select>
+
+	<select id="getSearchVMList" parameterType="kr.co.ubcn.multivm.model.VendingMachine" resultMap="VendingMachineModel">
+		SELECT VM.*,C.NAME AS COMPANY_NAME, ORG.NAME AS ORGANIZATION_NAME,U.NAME AS USER_NAME, IFNULL(F.CURR_VERSION,'') AS CURR_VERSION
+		FROM TB_VENDING_MACHINE VM
+		INNER JOIN TB_COMPANY C
+		ON VM.COMPANY_SEQ = C.SEQ
+		INNER JOIN TB_ORGANIZATION ORG
+		ON VM.ORGANIZATION_SEQ = ORG.SEQ
+		LEFT JOIN TB_FIRMWARE F
+		ON VM.FIRMWARE_SEQ = F.SEQ
+		LEFT JOIN TB_USER U
+		ON VM.USER_SEQ = U.SEQ
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+			AND VM.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND VM.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="auth!=null and !auth.equals('') and auth!=0">
+			AND IF(#{auth}>3,VM.USER_SEQ = #{userSeq},1=1)
+		</if>
+		<if test="firmwareSeq!=null and !firmwareSeq.equals('') and firmwareSeq!=0">
+			AND VM.FIRMWARE_SEQ = #{firmwareSeq}
+		</if>
+		<if test="seq!=null and !seq.equals('') and seq!=0">
+			AND VM.SEQ = #{seq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('') and vmId!=0 and vmId.equals('전체')">
+			AND (VM.VM_ID like CONCAT('%', #{vmId},'%')
+			OR VM.TERMINAL_ID like CONCAT('%', #{terminalId},'%'))
+		</if>
+		AND VM.VISIBLE = 'Y'
+		ORDER BY VM.SEQ desc
+	</select>
+
+	<insert id="insertVM" parameterType="kr.co.ubcn.multivm.model.VendingMachine">
+		INSERT INTO TB_VENDING_MACHINE
+		(SEQ, COMPANY_SEQ, ORGANIZATION_SEQ, USER_SEQ, VM_ID, TERMINAL_ID, PLACE,CREATE_DATE, CREATE_USER_SEQ,MODIFY_DATE,VM_MODEL )
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{companySeq},#{organizationSeq},#{userSeq},#{vmId},#{terminalId},#{place},now(), #{createUserSeq},now(),#{vmModel} from TB_VENDING_MACHINE
+	</insert>
+
+	<update id="modifyVM" parameterType="kr.co.ubcn.multivm.model.VendingMachine">
+		UPDATE TB_VENDING_MACHINE
+		SET
+		VM_ID=#{vmId},TERMINAL_ID=#{terminalId},ORGANIZATION_SEQ=#{organizationSeq}
+		,PLACE=#{place},USER_SEQ=#{userSeq}, COMPANY_SEQ=#{companySeq}
+		, MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now(), VM_MODEL=#{vmModel}
+		WHERE SEQ = #{seq}
+	</update>
+	<delete id="deleteVM" parameterType="int">
+		DELETE FROM TB_VENDING_MACHINE
+		WHERE SEQ = #{seq}
+	</delete>
+
+	<select id="isHasTerminalId" parameterType="java.util.Map" resultType="int">
+		SELECT COUNT(*)
+		FROM TB_VENDING_MACHINE
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('')">
+		AND COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('')">
+		AND ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		AND TERMINAL_ID = #{terminalId}
+		AND VISIBLE ='Y'
+		AND SEQ <![CDATA[<>]]> #{vmSeq}
+	</select>
+
+	<select id="isHasVMId" parameterType="java.util.Map" resultType="int">
+		SELECT COUNT(*)
+		FROM TB_VENDING_MACHINE
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('')">
+			AND COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('')">
+			AND ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		AND VM_ID = #{vmId}
+		AND VISIBLE ='Y'
+		AND SEQ <![CDATA[<>]]> #{vmSeq}
+	</select>
+
+	<update id="updateVMModifyDate" parameterType="int">
+		UPDATE TB_VENDING_MACHINE
+		SET
+		MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{seq}
+	</update>
+
+	<select id="getVMOfOrgList" parameterType="java.util.Map" resultMap="VendingMachineModel">
+		SELECT VM.*, C.NAME AS COMPANY_NAME, ORG.NAME AS ORGANIZATION_NAME, F.CURR_VERSION
+		FROM TB_VENDING_MACHINE VM
+		INNER JOIN TB_COMPANY C
+		ON VM.COMPANY_SEQ = C.SEQ
+		LEFT JOIN TB_FIRMWARE F
+		ON VM.FIRMWARE_SEQ = F.SEQ
+		INNER JOIN TB_ORGANIZATION ORG
+		ON VM.ORGANIZATION_SEQ = ORG.SEQ
+		WHERE 1=1
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND VM.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND VM.ORGANIZATION_SEQ = (SELECT ORGANIZATION_SEQ FROM TB_VENDING_MACHINE WHERE SEQ = #{vmSeq})
+		</if>
+		<if test="firmwareSeq!=null and !firmwareSeq.equals('') and firmwareSeq!=0">
+			AND VM.FIRMWARE_SEQ = #{firmwareSeq}
+		</if>
+		AND VM.VISIBLE = 'Y'
+		ORDER BY COMPANY_NAME,ORGANIZATION_NAME, VM.PLACE
+	</select>
+
+
+
+	<select id="getAdvSearchVMList" parameterType="java.util.Map" resultMap="VendingMachineModel">
+		SELECT VM.SEQ,VM.COMPANY_SEQ,VM.ORGANIZATION_SEQ,VM.VM_ID,VM.PLACE,VM.VM_MODEL
+		,C.NAME AS COMPANY_NAME, ORG.NAME AS ORGANIZATION_NAME, ADV.CREATE_DATE,ADV.ADV_SEQ
+		FROM TB_VENDING_MACHINE VM
+		INNER JOIN TB_COMPANY C
+		ON VM.COMPANY_SEQ = C.SEQ
+		INNER JOIN TB_ORGANIZATION ORG
+		ON VM.ORGANIZATION_SEQ = ORG.SEQ
+		INNER JOIN TB_VENDING_MACHINE_ADV ADV
+		ON VM.SEQ = ADV.VM_SEQ
+		WHERE 1=1
+		<if test="advSeq!=null and !advSeq.equals('') and advSeq!=0">
+			AND ADV.ADV_SEQ = #{advSeq}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND ADV.VM_SEQ = #{vmSeq}
+		</if>
+		AND VM.VISIBLE = 'Y'
+		ORDER BY COMPANY_NAME,ORGANIZATION_NAME, VM.PLACE
+	</select>
+
+	<delete id="deleteVM_v2" parameterType="java.util.Map">
+		DELETE FROM TB_VENDING_MACHINE
+		WHERE 1=1
+		AND SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+
+	<update id="deleteVM_v3" parameterType="java.util.Map">
+		UPDATE TB_VENDING_MACHINE
+		SET
+			MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		<if test="target!=null and (target.equals('organization') or target.equals('vm'))">
+			,VISIBLE = 'N'
+		</if>
+		<if test="target!=null and target.equals('user')">
+			,USER_SEQ = NULL
+		</if>
+		WHERE 1=1
+		<if test="target!=null and target.equals('organization')">
+			AND ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="target.equals('vm') and deleteList!=null and deleteList.size!=0">
+		AND SEQ IN
+			<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+				#{type}
+			</foreach>
+		</if>
+		<if test="target.equals('user') and deleteList!=null and deleteList.size!=0">
+			AND USER_SEQ IN
+			<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+				#{type}
+			</foreach>
+		</if>
+	</update>
+
+	<select id="isCheckUseVM" parameterType="java.util.Map" resultMap="VendingMachineModel">
+		SELECT VM.VM_ID, C.NAME AS COMPANY_NAME, ORG.NAME AS ORGANIZATION_NAME
+		FROM TB_VENDING_MACHINE VM
+		INNER JOIN TB_COMPANY C
+		ON VM.COMPANY_SEQ = C.SEQ
+		INNER JOIN TB_ORGANIZATION ORG
+		ON VM.ORGANIZATION_SEQ = ORG.SEQ
+		WHERE 1=1
+		<if test="target!=null and target.equals('company')">
+			AND C.SEQ IN
+			<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+				#{type}
+			</foreach>
+		</if>
+		<if test="target!=null and target.equals('organization')">
+			AND ORG.SEQ IN
+			<foreach collection="selectList" item="type" open="(" close=")" separator=",">
+				#{type}
+			</foreach>
+		</if>
+		ORDER BY VM.VM_ID
+	</select>
+
+
+
+
+
+
+
+</mapper>
+

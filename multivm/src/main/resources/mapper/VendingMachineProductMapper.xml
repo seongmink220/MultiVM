@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.VendingMachineProductMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.VendingMachineProduct" id="VendingMachineProductModel" autoMapping="true">
+		<result property="vmSeq" column="VM_SEQ"/>
+		<result property="slotNo" column="SLOT_NO"/>
+		<result property="productCode" column="PRODUCT_CODE"/>
+		<result property="productName" column="PRODUCT_NAME"/>
+		<result property="productImage" column="PRODUCT_IMAGE"/>
+		<result property="productDetail" column="PRODUCT_DETAIL"/>
+		<result property="productCount" column="PRODUCT_COUNT"/>
+		<result property="productPrice" column="PRODUCT_PRICE"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+		<result property="modifyUserSeq" column="MODIFY_USER_SEQ"/>
+		<result property="isGlass" column="IS_GLASS"/>
+		<result property="visible" column="VISIBLE"/>
+		<result property="eventSeq" column="EVENT_SEQ"/>
+		<result property="discount" column="DISCOUNT"/>
+		<result property="eventTitle" column="EVENT_TITLE"/>
+		<result property="eventContent" column="EVENT_CONTENT"/>
+		<result property="companyName" column="COMPANY_NAME"/>
+		<result property="organizationName" column="ORGANIZATION_NAME"/>
+		<result property="place" column="PLACE"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="vmId" column="VM_ID"/>
+
+	</resultMap>
+
+	<select id="getVMProductList" parameterType="java.util.Map" resultMap="VendingMachineProductModel">
+		SELECT vmp.VM_SEQ, vmp.PRODUCT_CODE, IFNULL(vmp.PRODUCT_COUNT,0) AS PRODUCT_COUNT,vmp.PRODUCT_PRICE
+		,p.NAME AS PRODUCT_NAME, IFNULL(p.IS_GLASS,'F') AS IS_GLASS
+		,CASE WHEN p.PRODUCT_IMAGE IS NULL OR p.PRODUCT_IMAGE like '%기본이미지_%' THEN 'http://devmultivm.ubcn.co.kr/image/product/default.png'
+		ELSE p.PRODUCT_IMAGE END AS PRODUCT_IMAGE
+		,CASE WHEN p.MODIFY_DATE IS NOT NULL THEN DATE_FORMAT(p.MODIFY_DATE,'%y/%m/%d') ELSE DATE_FORMAT(p.CREATE_DATE,'%y/%m/%d') END AS MODIFY_DATE
+		from TB_VENDING_MACHINE_PRODUCT vmp
+		inner join TB_VENDING_MACHINE vm on vm.SEQ=vmp.VM_SEQ
+		inner join TB_PRODUCT p on vmp.PRODUCT_CODE=p.CODE and vm.COMPANY_SEQ=p.COMPANY_SEQ and vm.ORGANIZATION_SEQ=p.ORGANIZATION_SEQ
+		where 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+		AND p.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+		AND p.ORGANIZATION_SEQ= #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('')">
+		AND vm.VM_ID = #{vmId}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('')">
+			AND vm.SEQ = #{vmSeq}
+		</if>
+		<if test="place!=null and !place.equals('')">
+			AND vm.PLACE = #{place}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('')">
+			AND vm.USER_SEQ = #{userSeq}
+		</if>
+		AND (vmp.SLOT_NO IS NULL OR NOT vmp.SLOT_NO = -1)
+		AND vmp.VISIBLE = 'Y'
+		ORDER BY
+		<if test="orderDate!=null and !orderDate.equals('')">
+			FIELD(vmp.PRODUCT_PRICE,0) desc, MODIFY_DATE desc,
+		</if>
+		vmp.PRODUCT_CODE
+	</select>
+	<select id="getVMProductInfo" parameterType="java.util.Map" resultMap="VendingMachineProductModel">
+		SELECT vmp.VM_SEQ, vmp.SLOT_NO, vmp.PRODUCT_CODE, vmp.PRODUCT_COUNT,vmp.PRODUCT_PRICE,p.PRODUCT_DETAIL
+		,p.NAME AS PRODUCT_NAME, p.IS_GLASS, vmp.EVENT_SEQ
+		,CASE WHEN p.PRODUCT_IMAGE IS NULL OR p.PRODUCT_IMAGE like '%기본이미지_%' THEN 'http://devmultivm.ubcn.co.kr/image/product/default.png'
+		ELSE p.PRODUCT_IMAGE END AS PRODUCT_IMAGE
+		,CASE
+		WHEN vmp.EVENT_SEQ IS NULL THEN 0
+		WHEN(vmp.EVENT_SEQ IS NOT NULL AND te.EVENT_TYPE='-') THEN -te.EVENT_DATA
+		WHEN(vmp.EVENT_SEQ IS NOT NULL AND te.EVENT_TYPE='%') THEN  - ROUND(vmp.PRODUCT_PRICE * te.EVENT_DATA / 100)
+		ELSE 0 END AS DISCOUNT, CASE
+		WHEN vmp.EVENT_SEQ IS NULL THEN ''
+		WHEN(vmp.EVENT_SEQ IS NOT NULL AND te.EVENT_TYPE='-') THEN CONCAT(-te.EVENT_DATA,'원 적용됨')
+		WHEN(vmp.EVENT_SEQ IS NOT NULL AND te.EVENT_TYPE='%') THEN CONCAT(te.EVENT_DATA,'% 할인적용됨')
+		ELSE '' END AS EVENT_CONTENT
+		,IFNULL(te.EVENT_TITLE,'') AS EVENT_TITLE
+		FROM TB_PRODUCT p
+		INNER JOIN TB_VENDING_MACHINE_PRODUCT vmp
+		ON p.CODE = vmp.PRODUCT_CODE
+		INNER JOIN TB_VENDING_MACHINE vm
+		ON vm.seq = vmp.VM_SEQ
+		LEFT JOIN TB_EVENT te ON vmp.EVENT_SEQ = te.SEQ AND te.EVENT_START_TIME <![CDATA[<=]]> now() AND te.EVENT_END_TIME <![CDATA[>=]]> now()
+		WHERE p.COMPANY_SEQ = #{companySeq}
+		AND p.ORGANIZATION_SEQ= #{organizationSeq}
+		<if test="vmId!=null and !vmId.equals('')">
+			AND vm.VM_ID = #{vmId}
+		</if>
+		<if test="productCode!=null and !productCode.equals('')">
+			AND vmp.PRODUCT_CODE = #{productCode}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('')">
+			AND vm.SEQ = #{vmSeq}
+		</if>
+		<if test="place!=null and !place.equals('')">
+			AND vm.PLACE = #{place}
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('')">
+			AND vm.USER_SEQ = #{userSeq}
+		</if>
+		AND (vmp.SLOT_NO IS NULL OR NOT vmp.SLOT_NO = -1)
+		AND vmp.VISIBLE = 'Y'
+		ORDER BY vmp.PRODUCT_CODE
+	</select>
+
+	<select id="getVMProduct" parameterType="java.util.Map" resultMap="VendingMachineProductModel">
+		SELECT vm.SEQ AS VM_SEQ , p.CODE AS PRODUCT_CODE, p.PRODUCT_COUNT
+		     ,IFNULL(#{productPrice},p.PRODUCT_PRICE) AS PRODUCT_PRICE
+			 ,p.NAME AS PRODUCT_NAME
+		     , CASE WHEN p.PRODUCT_IMAGE IS NULL OR p.PRODUCT_IMAGE like '%기본이미지_%' THEN 'http://devmultivm.ubcn.co.kr/image/product/default.png'
+			 ELSE p.PRODUCT_IMAGE END AS PRODUCT_IMAGE
+		     , p.PRODUCT_DETAIL,p.IS_GLASS
+		FROM TB_PRODUCT p
+		INNER JOIN TB_VENDING_MACHINE vm
+		ON vm.COMPANY_SEQ = p.COMPANY_SEQ  AND vm.ORGANIZATION_SEQ=p.ORGANIZATION_SEQ
+		WHERE p.COMPANY_SEQ = #{companySeq}
+		  AND p.ORGANIZATION_SEQ= #{organizationSeq}
+		<if test="vmSeq!=null and !vmSeq.equals('')">
+		  AND vm.SEQ = #{vmSeq}
+		</if>
+		<if test="productCode!=null and !productCode.equals('')">
+		  AND p.CODE = #{productCode}
+		</if>
+	</select>
+
+	<delete id="deleteVMProduct" parameterType="java.util.Map">
+		DELETE FROM TB_VENDING_MACHINE_PRODUCT
+		WHERE VM_SEQ = #{vmSeq}
+		<if test="productCode!=null and !productCode.equals('')">
+			AND PRODUCT_CODE = #{productCode}
+		</if>
+	</delete>
+
+	<insert id="insertVMProduct" parameterType="kr.co.ubcn.multivm.model.VendingMachineProduct">
+		INSERT INTO TB_VENDING_MACHINE_PRODUCT
+		(VM_SEQ, SLOT_NO, PRODUCT_CODE, PRODUCT_COUNT, PRODUCT_PRICE, CREATE_DATE, CREATE_USER_SEQ,MODIFY_DATE, MODIFY_USER_SEQ, VISIBLE)
+		VALUE(#{vmSeq},0,#{productCode},IFNULL(#{productCount},0),IFNULL(#{productPrice},0),now(),#{createUserSeq},now(),'0','Y')
+	</insert>
+
+	<select id="isHasCodeVMProductCode" parameterType="java.util.Map" resultType="String">
+		SELECT PRODUCT_CODE FROM TB_VENDING_MACHINE_PRODUCT VMP
+		WHERE VMP.VM_SEQ = #{vmSeq}
+		<if test="check!=null and !check.equals('')">
+		AND VMP.PRODUCT_CODE IN
+		<foreach collection="productCodeArray" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+		</if>
+		AND (VMP.SLOT_NO IS NULL OR NOT VMP.SLOT_NO = -1)
+		AND VMP.VISIBLE = 'Y'
+		ORDER BY VMP.PRODUCT_CODE
+	</select>
+	<update id="modifyVMProduct" parameterType="kr.co.ubcn.multivm.model.VendingMachineProduct">
+		UPDATE TB_VENDING_MACHINE_PRODUCT
+		SET
+		<if test="productPrice!=null and !productPrice.equals('')">
+		   PRODUCT_PRICE=#{productPrice},
+		</if>
+		<if test="productCount!=null and !productCount.equals('')">
+			PRODUCT_COUNT=#{productCount},
+		</if>
+		   MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now(),VISIBLE = 'Y'
+		WHERE VM_SEQ=#{vmSeq} AND PRODUCT_CODE=#{productCode}
+	</update>
+	<update id="deleteVMProduct_v1" parameterType="java.util.Map">
+		UPDATE TB_VENDING_MACHINE_PRODUCT
+		SET
+		VISIBLE='N',
+		MODIFY_USER_SEQ=#{userSeq}, MODIFY_DATE=now()
+		WHERE VM_SEQ=#{vmSeq} AND PRODUCT_CODE=#{productCode2} AND VISIBLE = 'Y'
+	</update>
+	<select id="isHasCodeVMProductCode_v1" parameterType="java.util.Map" resultMap="VendingMachineProductModel">
+		SELECT VMP.* FROM TB_VENDING_MACHINE_PRODUCT VMP
+		WHERE VMP.VM_SEQ = #{vmSeq}
+		AND VMP.PRODUCT_CODE = #{productCode}
+	</select>
+
+	<!--<select id="isHasCodeVMProductCode_v2_deleted" parameterType="java.util.Map" resultMap="VendingMachineProductModel">
+		SELECT VMP.PRODUCT_CODE FROM TB_VENDING_MACHINE_PRODUCT VMP
+		WHERE VMP.VM_SEQ = #{vmSeq}
+		  AND VMP.PRODUCT_CODE = #{productCode}
+		  AND VMP.SLOT_NO = -1
+	</select>-->
+	<update id="deleteVMProduct_v2_deleted" parameterType="java.util.Map">
+		UPDATE TB_VENDING_MACHINE_PRODUCT
+		SET
+			VISIBLE='Y',
+			MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now(),
+			PRODUCT_COUNT = (SELECT PRODUCT_COUNT FROM TB_PRODUCT WHERE ORGANIZATION_SEQ = #{organizationSeq} AND CODE=#{productCode}),
+			PRODUCT_PRICE = #{productPrice}
+		WHERE VM_SEQ=#{vmSeq} AND PRODUCT_CODE=#{productCode}
+		<if test="visible!=null and !visible.equals('') and visible!=0">
+		  AND VISIBLE='N'
+		</if>
+	</update>
+
+	<!--해당 이벤트 등록된 상품리스트-->
+	<select id="getEventVMProductList" parameterType="java.util.Map" resultMap="VendingMachineProductModel">
+		select c.NAME AS COMPANY_NAME,org.NAME AS ORGANIZATION_NAME,vm.VM_ID AS VM_ID,vm.PLACE AS PLACE, p.NAME AS PRODUCT_NAME, e.SEQ AS EVENT_SEQ
+		,vmp.PRODUCT_PRICE,vmp.PRODUCT_CODE, vmp.SLOT_NO, vmp.VM_SEQ, IFNULL(vmp.EVENT_SEQ,'') AS EVENT_CONTENT, e.EVENT_TITLE, vm.ORGANIZATION_SEQ
+		,case when vmp.EVENT_SEQ IS NOT NULL AND e.EVENT_START_TIME <![CDATA[<=]]> now() AND e.EVENT_END_TIME <![CDATA[>=]]> now() AND e.EVENT_TYPE='%' then vmp.PRODUCT_PRICE- ROUND(vmp.PRODUCT_PRICE * e.EVENT_DATA / 100)
+		when vmp.EVENT_SEQ IS NOT NULL AND e.EVENT_START_TIME <![CDATA[<=]]> now() AND e.EVENT_END_TIME <![CDATA[>=]]> now() AND e.EVENT_TYPE='-' then vmp.PRODUCT_PRICE-e.EVENT_DATA
+		else vmp.PRODUCT_PRICE end AS PRODUCT_COUNT
+		from TB_VENDING_MACHINE_PRODUCT vmp
+		inner join TB_VENDING_MACHINE vm on vm.SEQ=vmp.VM_SEQ
+		inner join TB_COMPANY c on vm.COMPANY_SEQ=c.SEQ
+		inner join TB_ORGANIZATION org on org.SEQ=vm.ORGANIZATION_SEQ
+		inner join TB_PRODUCT p on vmp.PRODUCT_CODE=p.CODE and vm.COMPANY_SEQ=p.COMPANY_SEQ and vm.ORGANIZATION_SEQ=p.ORGANIZATION_SEQ
+		left join TB_EVENT e on e.SEQ=vmp.EVENT_SEQ
+		where 1=1
+		<if test="eSeq!=null and !eSeq.equals('') and eSeq!=0">
+		  AND vmp.EVENT_SEQ = #{eSeq}
+		</if>
+		<if test="productCode!=null and !productCode.equals('') and !productCode.equals('all')">
+			AND vmp.PRODUCT_CODE = #{productCode}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND vmp.VM_SEQ = #{vmSeq}
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND vm.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		  AND (vmp.SLOT_NO IS NULL OR NOT vmp.SLOT_NO = -1)
+		  and vmp.VISIBLE='Y'
+		<if test="event2!=null and !event2.equals('') and event2!=0">
+			GROUP BY vmp.PRODUCT_CODE
+		</if>
+		<if test="event3!=null and !event3.equals('') and event3!=0">
+			GROUP BY vmp.VM_SEQ
+		</if>
+		order by COMPANY_NAME,ORGANIZATION_NAME,VM_ID,vmp.PRODUCT_CODE
+	</select>
+
+
+	<update id="updateEventVMProduct" parameterType="java.util.Map">
+		UPDATE TB_VENDING_MACHINE_PRODUCT
+		SET
+			EVENT_SEQ=#{eventSeq},
+			MODIFY_USER_SEQ=#{userSeq}, MODIFY_DATE=now()
+		WHERE VM_SEQ=#{vmSeq} AND PRODUCT_CODE=#{productCode} AND VISIBLE = 'Y'
+	</update>
+	<!--이벤트페이지 상품셀렉트-->
+	<select id="getVMProductList2" parameterType="java.util.Map" resultMap="VendingMachineProductModel">
+		select vmp.PRODUCT_CODE, vm.SEQ AS VM_SEQ, p.NAME AS PRODUCT_NAME
+		from TB_VENDING_MACHINE_PRODUCT vmp
+				 inner join TB_VENDING_MACHINE vm on vm.SEQ=vmp.VM_SEQ
+				 inner join TB_PRODUCT p on vmp.PRODUCT_CODE=p.CODE and vm.COMPANY_SEQ=p.COMPANY_SEQ and vm.ORGANIZATION_SEQ=p.ORGANIZATION_SEQ
+		where 1=1
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+		  and vm.ORGANIZATION_SEQ =#{organizationSeq}
+		</if>
+		group by vmp.PRODUCT_CODE, PRODUCT_NAME
+		order by vm.VM_ID,vmp.PRODUCT_CODE
+	</select>
+	<delete id="deleteVmProduct_v2" parameterType="java.util.Map">
+		DELETE FROM TB_VENDING_MACHINE_PRODUCT
+		WHERE 1=1
+		AND VM_SEQ IN
+		<foreach collection="deleteList" item="type" open="(" close=")" separator=",">
+			#{type}
+		</foreach>
+	</delete>
+	<update id="updateVMProductModifyDate" parameterType="kr.co.ubcn.multivm.model.Product">
+		UPDATE TB_VENDING_MACHINE_PRODUCT
+		SET
+			MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE VM_SEQ IN (SELECT SEQ FROM TB_VENDING_MACHINE WHERE COMPANY_SEQ=#{companySeq} AND ORGANIZATION_SEQ=#{organizationSeq})
+		AND PRODUCT_CODE=#{productCode} AND VISIBLE = 'Y'
+	</update>
+
+
+
+</mapper>
+

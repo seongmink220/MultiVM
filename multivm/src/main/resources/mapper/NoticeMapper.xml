@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.NoticeMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.Notice" id="NoticeModel" autoMapping="true">
+		<result property="seq" column="SEQ"/>
+		<result property="title" column="TITLE"/>
+		<result property="content" column="CONTENT"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+		<result property="modifyUserSeq" column="MODIFY_USER_SEQ"/>
+		<result property="file1" column="FILE1"/>
+		<result property="file2" column="FILE2"/>
+		<result property="file3" column="FILE3"/>
+		<result property="file4" column="FILE4"/>
+
+	</resultMap>
+
+	<resultMap type="kr.co.ubcn.multivm.model.NoticeFile" id="NoticeFileModel">
+		<result property="seq" column="SEQ"/>
+		<result property="noticeSeq" column="NOTICE_SEQ"/>
+		<result property="fileName" column="FILE_NAME"/>
+		<result property="fileRealName" column="FILE_REAL_NAME"/>
+		<result property="fileSize" column="FILE_SIZE"/>
+	</resultMap>
+	<select id="getNoticeInfo" parameterType="Integer" resultMap="NoticeModel">
+		SELECT *
+		FROM TB_NOTICE
+		WHERE SEQ = #{seq}
+	</select>
+	<select id="getNoticePrevAndNext" parameterType="Integer" resultMap="NoticeModel">
+		SELECT *
+		FROM TB_NOTICE
+		WHERE SEQ IN (
+		(SELECT SEQ FROM TB_NOTICE WHERE SEQ <![CDATA[<]]> #{seq}  ORDER BY SEQ DESC LIMIT 1),
+		(SELECT SEQ FROM TB_NOTICE WHERE SEQ <![CDATA[>]]> #{seq}  ORDER BY SEQ LIMIT 1)
+		)
+	</select>
+	<select id="getNoticeList" parameterType="java.util.Map" resultMap="NoticeModel">
+		SELECT *
+		FROM TB_NOTICE
+		WHERE 1=1
+		<if test="sDate!=null and !sDate.equals('')">
+		AND CREATE_DATE  <![CDATA[>=]]> #{sDate}
+		</if>
+		<if test="eDate!=null and !eDate.equals('')">
+			AND CREATE_DATE <![CDATA[<]]>#{eDate}
+		</if>
+		<if test="title!=null and !title.equals('')">
+		AND TITLE like CONCAT('%', #{title},'%')
+		</if>
+		<if test="content!=null and !content.equals('')">
+			AND CONTENT like CONCAT('%', #{content},'%')
+		</if>
+		<if test="titCont!=null and !titCont.equals('')">
+			AND (TITLE like CONCAT('%', #{titCont},'%')
+			OR CONTENT like CONCAT('%', #{titCont},'%'))
+		</if>
+		ORDER BY SEQ DESC
+		<if test="index!=null and !index.equals('')">
+			LIMIT 4
+		</if>
+	</select>
+	<insert id="insertNotice" parameterType="kr.co.ubcn.multivm.model.Notice">
+		INSERT INTO TB_NOTICE
+		(SEQ, TITLE, CONTENT, CREATE_DATE, CREATE_USER_SEQ, FILE1, FILE2, FILE3,FILE4)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{title},#{content},now(),#{createUserSeq}
+			 ,#{file1},#{file2}, #{file3},#{file4} from TB_NOTICE
+	</insert>
+	<update id="updateNotice" parameterType="kr.co.ubcn.multivm.model.Notice">
+		UPDATE TB_NOTICE
+		SET
+			TITLE=#{title},CONTENT=#{content},
+			FILE1=#{file1},FILE2=#{file2},FILE3=#{file3},FILE4=#{file4},
+			MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{seq}
+	</update>
+	<delete id="deleteNotice" parameterType="int">
+		DELETE FROM TB_NOTICE
+		WHERE SEQ = #{seq}
+	</delete>
+	<select id="getNoticeFileList" parameterType="Integer" resultMap="NoticeFileModel">
+		SELECT f.FILE_NAME, f.FILE_REAL_NAME, f.FILE_SIZE, f.SEQ
+		FROM TB_NOTICE n
+		INNER JOIN TB_FILE f ON f.NOTICE_SEQ = n.SEQ
+		WHERE n.SEQ = #{seq}
+	</select>
+	<select id="getNewNotice"  resultType="int">
+		SELECT MAX(SEQ) FROM TB_NOTICE
+	</select>
+
+	<insert id="insertNoticeFile" parameterType="kr.co.ubcn.multivm.model.NoticeFile">
+		INSERT INTO TB_FILE
+		(SEQ, NOTICE_SEQ, FILE_NAME, FILE_REAL_NAME, FILE_SIZE)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{noticeSeq},#{fileName},#{fileRealName}
+			 ,#{fileSize} from TB_FILE
+
+		<selectKey resultType="int" keyColumn="SEQ" keyProperty="seq" order="AFTER">
+			SELECT MAX(SEQ) AS SEQ FROM TB_FILE
+		</selectKey>
+	</insert>
+	<delete id="deleteNoticeFile" parameterType="java.util.Map">
+		DELETE FROM TB_FILE
+		WHERE 1=1
+		<if test="seq!=null and !seq.equals('')">
+		AND SEQ = #{seq}
+		</if>
+		<if test="noticeSeq!=null and !noticeSeq.equals('')">
+		AND NOTICE_SEQ = #{noticeSeq}
+		</if>
+		<if test="fileRealName!=null and !fileRealName.equals('')">
+		AND FILE_REAL_NAME = #{fileRealName}
+		</if>
+	</delete>
+	<select id="getCountNoticeFile"  parameterType="int" resultType="int">
+		SELECT COUNT(SEQ) FROM TB_FILE
+		WHERE NOTICE_SEQ = #{noticeSeq}
+	</select>
+
+
+
+
+
+
+</mapper>

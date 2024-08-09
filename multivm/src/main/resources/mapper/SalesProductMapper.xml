@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.SalesProductMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.SalesProduct" id="SalesProductModel" autoMapping="true">
+		<result property="transactionNo" column="TRANSACTION_NO"/>
+		<result property="seq" column="SEQ"/>
+		<result property="productCode" column="PRODUCT_CODE"/>
+		<result property="productPrice" column="PRODUCT_AMOUNT"/>
+		<result property="productName" column="PRODUCT_NAME"/>
+		<result property="count" column="COUNT"/>
+		<result property="shipResult" column="SHIP_RESULT"/>
+
+		<result property="vmId" column="VM_ID"/>
+		<result property="terminalId" column="TERMINAL_ID"/>
+		<result property="transactionDate" column="TRANSACTION_DATE"/>
+		<result property="transactionTime" column="TRANSACTION_TIME"/>
+		<result property="amount" column="AMOUNT"/>
+		<result property="slotNo" column="SLOT_NO"/>
+
+		<result property="organizationName" column="ORGANIZATION_NAME"/>
+		<result property="companyName" column="COMPANY_NAME"/>
+		<result property="place" column="PLACE"/>
+
+		<result property="receiveDate" column="RECEIVE_DATE"/>
+		<result property="payType" column="PAY_TYPE"/>
+		<result property="payStep" column="PAY_STEP"/>
+		<result property="cancelDate" column="CANCEL_DATE"/>
+		<result property="cancelTime" column="CANCEL_TIME"/>
+
+	</resultMap>
+
+	<!--<insert id="insertStock" parameterType="java.util.Map">
+		INSERT INTO TB_STOCK
+		(SEQ, COMPANY_SEQ, ORGANIZATION_SEQ, VM_SEQ, PRODUCT_SEQ, COUNT, CREATE_DATE, CREATE_USER_SEQ)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{companySeq},#{organizationSeq},#{vmSeq}
+		     ,(SELECT TP.SEQ FROM TB_PRODUCT TP
+				WHERE TP.COMPANY_SEQ = #{companySeq} AND TP.ORGANIZATION_SEQ = #{organizationSeq} AND TP.CODE = #{productCode})
+		     ,0,now(), #{createUserSeq} from TB_STOCK
+	</insert>-->
+	<select id="getSalesDetail" parameterType="kr.co.ubcn.multivm.model.SalesProduct" resultMap="SalesProductModel">
+		SELECT sp.TRANSACTION_NO, sp.SEQ, sp.PRODUCT_CODE, IFNULL(sp.PRODUCT_AMOUNT,0) AS PRODUCT_AMOUNT, IFNULL(sp.COUNT,0) AS COUNT
+			, CASE WHEN sp.SHIP_RESULT = 'T' THEN '정상'
+			WHEN sp.SHIP_RESULT = 'F' THEN '미투출'
+			ELSE '' END AS SHIP_RESULT
+			 ,s.VM_ID, s.TERMINAL_ID, CONCAT(LEFT(s.TRANSACTION_TIME,2),':',MID(s.TRANSACTION_TIME,3,2),':',RIGHT(s.TRANSACTION_TIME,2)) AS TRANSACTION_TIME, DATE_FORMAT(STR_TO_DATE(s.TRANSACTION_DATE,'%Y%m%d'),'%Y.%m.%d') AS TRANSACTION_DATE, s.AMOUNT, sp.SLOT_NO
+		     , p.NAME AS PRODUCT_NAME
+			 , s.RECEIVE_DATE, s.PAY_TYPE, s.PAY_STEP, s.CANCEL_DATE, s.CANCEL_TIME
+		FROM TB_SALES_PRODUCT sp
+			INNER JOIN TB_SALES s ON s.TRANSACTION_NO = sp.TRANSACTION_NO
+			INNER JOIN TB_PRODUCT p ON s.COMPANY_SEQ = p.COMPANY_SEQ
+		AND s.ORGANIZATION_SEQ = p.ORGANIZATION_SEQ
+		AND sp.PRODUCT_CODE = p.CODE
+		where sp.TRANSACTION_NO = #{transactionNo}
+		ORDER BY sp.SEQ
+	</select>
+
+	<select id="getDeadlineSalesData" parameterType="kr.co.ubcn.multivm.model.Sales" resultMap="SalesProductModel">
+		SELECT s.TRANSACTION_NO, s.VM_ID, s.TERMINAL_ID, DATE_FORMAT(STR_TO_DATE(s.TRANSACTION_DATE,'%Y%m%d'),'%Y-%m-%d') AS TRANSACTION_DATE
+		, CONCAT(LEFT(s.TRANSACTION_TIME,2),':',MID(s.TRANSACTION_TIME,3,2),':',RIGHT(s.TRANSACTION_TIME,2)) AS TRANSACTION_TIME
+		, sp.PRODUCT_CODE, (select NAME from TB_PRODUCT where COMPANY_SEQ = #{companySeq} and ORGANIZATION_SEQ = vm.ORGANIZATION_SEQ and CODE = sp.PRODUCT_CODE) AS PRODUCT_NAME
+		, sp.COUNT, sp.PRODUCT_AMOUNT*sp.COUNT AS PRODUCT_AMOUNT, sp.SLOT_NO
+		, case when sp.SHIP_RESULT = 'F' then '미투출'
+		when sp.SHIP_RESULT = 'T' then '정상'
+		else '' end AS SHIP_RESULT
+		, (SELECT NAME FROM TB_COMPANY WHERE SEQ = s.COMPANY_SEQ) AS COMPANY_NAME
+		, (SELECT NAME FROM TB_ORGANIZATION WHERE SEQ = s.ORGANIZATION_SEQ) AS ORGANIZATION_NAME
+		, vm.PLACE
+		, s.RECEIVE_DATE, s.PAY_TYPE, s.PAY_STEP, s.CANCEL_DATE, s.CANCEL_TIME
+		FROM TB_SALES s
+		INNER JOIN TB_SALES_PRODUCT sp ON sp.TRANSACTION_NO = s.TRANSACTION_NO
+		INNER JOIN TB_VENDING_MACHINE vm ON vm.VM_ID = s.VM_ID
+		WHERE s.COMPANY_SEQ = #{companySeq}
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND s.ORGANIZATION_SEQ = #{organizationSeq}
+		</if>
+		<if test="vmId!=null and !vmId.equals('') and !vmId.equals('전체')">
+			AND s.VM_ID = #{vmId}
+		</if>
+		<if test="terminalId!=null and !terminalId.equals('') and !terminalId.equals('전체')">
+			AND s.TERMINAL_ID = #{terminalId}
+		</if>
+
+		AND s.TRANSACTION_DATE BETWEEN #{sDate} AND #{eDate}
+		ORDER BY COMPANY_NAME, ORGANIZATION_NAME, vm.PLACE, s.TRANSACTION_DATE, s.TRANSACTION_TIME
+	</select>
+
+
+</mapper>

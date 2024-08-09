@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.ProductMapper">
+
+<resultMap type="kr.co.ubcn.multivm.model.Product" id="ProductModel" autoMapping="true">
+	<result property="productSeq" column="SEQ"/>
+	<result property="companySeq" column="COMPANY_SEQ"/>
+	<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+	<result property="productCode" column="CODE"/>
+	<result property="productName" column="NAME"/>
+	<result property="productPrice" column="PRODUCT_PRICE"/>
+	<result property="productDetail" column="PRODUCT_DETAIL"/>
+	<result property="productCount" column="PRODUCT_COUNT"/>
+	<result property="useYN" column="USE_YN"/>
+	<result property="createDate" column="CREATE_DATE"/>
+	<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+	<result property="modifyDate" column="MODIFY_DATE"/>
+	<result property="modifyUserSeq" column="MODIFY_USER_SEQ"/>
+	<result property="productImage" column="PRODUCT_IMAGE"/>
+	<result property="visible" column="VISIBLE"/>
+	<result property="isGlass" column="IS_GLASS"/>
+	<result property="eventSeq" column="EVENT_SEQ"/>
+	<result property="discount" column="DISCOUNT"/>
+	<result property="eventTitle" column="EVENT_TITLE"/>
+	<result property="eventContent" column="EVENT_CONTENT"/>
+	<result property="imgCode" column="IMG_CODE"/>
+	<result property="prePrice" column="PRE_PRICE"/>
+</resultMap>
+
+<select id="getSearchProduct" parameterType="kr.co.ubcn.multivm.model.Product" resultMap="ProductModel">
+	SELECT P.SEQ ,P.COMPANY_SEQ ,P.ORGANIZATION_SEQ ,P.CODE ,P.NAME ,P.PRODUCT_PRICE ,P.PRODUCT_DETAIL ,P.PRODUCT_COUNT ,IFNULL(P.USE_YN,'Y') AS USE_YN, IFNULL(P.IMG_CODE,'') AS IMG_CODE
+	,P.CREATE_DATE ,P.CREATE_USER_SEQ ,P.MODIFY_USER_SEQ
+	,CASE WHEN P.PRODUCT_IMAGE IS NULL OR P.PRODUCT_IMAGE like '%기본이미지_%' THEN 'http://devmultivm.ubcn.co.kr/image/product/default.png'
+	ELSE P.PRODUCT_IMAGE END AS PRODUCT_IMAGE
+	,IFNULL(P.IS_GLASS,'F') AS IS_GLASS,P.VISIBLE ,P.EVENT_SEQ
+	,CASE WHEN P.MODIFY_DATE IS NOT NULL THEN DATE_FORMAT(P.MODIFY_DATE,'%y/%m/%d') ELSE DATE_FORMAT(P.CREATE_DATE,'%y/%m/%d') END AS MODIFY_DATE
+	FROM TB_PRODUCT P
+	WHERE 1=1
+	<if test="companySeq!=null and !companySeq.equals('')">
+		AND P.COMPANY_SEQ = #{companySeq}
+	</if>
+	  AND P.ORGANIZATION_SEQ = #{organizationSeq}
+	<if test="productCode!=null and !productCode.equals('')">
+		AND (P.CODE like CONCAT('%', #{productCode},'%')
+		    OR P.NAME like CONCAT('%', #{productName},'%'))
+	</if>
+	<if test="useYN!=null and !useYN.equals('')">
+		AND P.USE_YN = 'Y'
+	</if>
+	AND P.VISIBLE = 'Y'
+	ORDER BY
+	<if test="orderDate!=null and !orderDate.equals('')">
+		COALESCE(P.MODIFY_DATE, P.CREATE_DATE) DESC, P.CREATE_DATE DESC,
+	</if>
+	P.CODE
+</select>
+
+<select id="getSelectProduct" parameterType="int" resultMap="ProductModel">
+	<![CDATA[
+	SELECT P.SEQ ,P.COMPANY_SEQ ,P.ORGANIZATION_SEQ ,P.CODE ,P.NAME ,P.PRODUCT_PRICE ,P.PRODUCT_DETAIL ,P.PRODUCT_COUNT ,IFNULL(P.USE_YN,'Y') AS USE_YN
+		 ,P.CREATE_DATE ,P.CREATE_USER_SEQ ,P.MODIFY_DATE ,P.MODIFY_USER_SEQ
+		 ,CASE WHEN P.PRODUCT_IMAGE IS NULL OR P.PRODUCT_IMAGE like '%기본이미지_%' THEN 'http://devmultivm.ubcn.co.kr/image/product/default.png'
+		 ELSE P.PRODUCT_IMAGE END AS PRODUCT_IMAGE
+		 ,IFNULL(P.IS_GLASS,'F') AS IS_GLASS,P.VISIBLE ,P.EVENT_SEQ
+	     , CASE
+	WHEN P.EVENT_SEQ IS NULL THEN 0
+	WHEN(P.EVENT_SEQ IS NOT NULL AND te.EVENT_TYPE='-' ) THEN -te.EVENT_DATA
+	WHEN(P.EVENT_SEQ IS NOT NULL AND te.EVENT_TYPE='%' ) THEN  - ROUND(P.PRODUCT_PRICE * te.EVENT_DATA / 100)
+	ELSE 0 END AS DISCOUNT, IFNULL(te.EVENT_TITLE,'') AS EVENT_TITLE, CASE
+	WHEN P.EVENT_SEQ IS NULL THEN ''
+	WHEN(P.EVENT_SEQ IS NOT NULL AND te.EVENT_TYPE='-' ) THEN CONCAT(-te.EVENT_DATA,'원 적용됨')
+	WHEN(P.EVENT_SEQ IS NOT NULL AND te.EVENT_TYPE='%' ) THEN CONCAT(te.EVENT_DATA,'% 할인적용됨')
+	ELSE '' END AS EVENT_CONTENT
+	,IFNULL(te.EVENT_TITLE,'') AS EVENT_TITLE
+	FROM TB_PRODUCT P
+	LEFT JOIN TB_EVENT te ON P.EVENT_SEQ = te.SEQ AND te.EVENT_START_TIME <= now() AND te.EVENT_END_TIME >= now()
+	WHERE P.SEQ = #{productSeq}
+	AND P.VISIBLE = 'Y'
+	]]>
+</select>
+
+<select id="getUserProduct" parameterType="java.util.Map" resultMap="ProductModel">
+	SELECT P.SEQ ,P.COMPANY_SEQ ,P.ORGANIZATION_SEQ ,P.CODE ,P.NAME ,P.PRODUCT_PRICE ,P.PRODUCT_DETAIL ,P.PRODUCT_COUNT ,IFNULL(P.USE_YN,'Y') AS USE_YN
+		 ,P.CREATE_DATE ,P.CREATE_USER_SEQ ,P.MODIFY_DATE ,P.MODIFY_USER_SEQ
+		 ,CASE WHEN P.PRODUCT_IMAGE IS NULL OR P.PRODUCT_IMAGE like '%기본이미지_%' THEN 'http://devmultivm.ubcn.co.kr/image/product/default.png'
+		  ELSE P.PRODUCT_IMAGE END AS PRODUCT_IMAGE
+		 ,IFNULL(P.IS_GLASS,'F') AS IS_GLASS,P.VISIBLE ,P.EVENT_SEQ
+	FROM TB_PRODUCT P
+	WHERE P.COMPANY_SEQ = #{companySeq}
+		AND P.ORGANIZATION_SEQ = #{organizationSeq}
+	  	AND P.VISIBLE = 'Y'
+	    AND P.USE_YN = 'Y'
+	ORDER BY P.CODE
+</select>
+
+<select id="getUserProduct_v1" parameterType="kr.co.ubcn.multivm.model.User" resultMap="ProductModel">
+	SELECT P.SEQ ,P.COMPANY_SEQ ,P.ORGANIZATION_SEQ ,P.CODE ,P.NAME ,P.PRODUCT_PRICE ,P.PRODUCT_DETAIL ,P.PRODUCT_COUNT ,IFNULL(P.USE_YN,'Y') AS USE_YN
+		 ,P.CREATE_DATE ,P.CREATE_USER_SEQ ,P.MODIFY_DATE ,P.MODIFY_USER_SEQ
+		 ,CASE WHEN P.PRODUCT_IMAGE IS NULL OR P.PRODUCT_IMAGE like '%기본이미지_%' THEN 'http://devmultivm.ubcn.co.kr/image/product/default.png'
+		  ELSE P.PRODUCT_IMAGE END AS PRODUCT_IMAGE
+		 ,IFNULL(P.IS_GLASS,'F') AS IS_GLASS,P.VISIBLE ,P.EVENT_SEQ
+	FROM TB_PRODUCT P
+	WHERE P.COMPANY_SEQ = #{companySeq}
+	  AND P.ORGANIZATION_SEQ = #{organizationSeq}
+	  AND P.VISIBLE = 'Y'
+	ORDER BY COALESCE(P.MODIFY_DATE, P.CREATE_DATE) DESC, P.CREATE_DATE DESC
+</select>
+
+<delete id="deleteProduct" parameterType="java.util.Map">
+	DELETE FROM TB_PRODUCT
+	WHERE 1=1
+	<if test="target!=null and target.equals('company')">
+		AND COMPANY_SEQ = #{companySeq}
+	</if>
+	<if test="target!=null and target.equals('organization')">
+		AND ORGANIZATION_SEQ = #{organizationSeq}
+	</if>
+	<if test="productSeq!=null and !productSeq.equals('')">
+	AND SEQ = #{productSeq}
+	</if>
+</delete>
+
+	<update id="modifyProduct" parameterType="kr.co.ubcn.multivm.model.Product">
+		UPDATE TB_PRODUCT
+		SET
+		MODIFY_DATE=now()
+		<if test="productName!=null and !productName.equals('')">
+		    ,NAME=#{productName},CODE=#{productCode},PRODUCT_COUNT=#{productCount}
+		    ,PRODUCT_PRICE=#{productPrice},PRODUCT_DETAIL=#{productDetail},IS_GLASS=#{isGlass}, USE_YN=#{useYN}
+			, MODIFY_USER_SEQ=#{modifyUserSeq}
+		</if>
+		<if test="productImage!=null and !productImage.equals('')">
+		  	,PRODUCT_IMAGE=#{productImage}
+		</if>
+		WHERE SEQ = #{productSeq}
+		AND VISIBLE = 'Y'
+	</update>
+
+	<update id="clearProduct" parameterType="kr.co.ubcn.multivm.model.Product">
+		UPDATE TB_PRODUCT
+		SET
+			PRODUCT_COUNT=0,
+			MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{productSeq}
+		AND VISIBLE = 'Y'
+	</update>
+
+	<!--<insert id="insertProduct" parameterType="kr.co.ubcn.multivm.model.Product">
+		INSERT INTO TB_PRODUCT
+			(SEQ, COMPANY_SEQ, ORGANIZATION_SEQ, CODE, NAME, PRODUCT_PRICE, PRODUCT_DETAIL, PRODUCT_COUNT, USE_YN, CREATE_DATE, CREATE_USER_SEQ, PRODUCT_IMAGE, IS_GLASS, VISIBLE)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+		     ,#{companySeq},#{organizationSeq},IFNULL(UPPER(#{productCode},),#{productName},IFNULL(#{productPrice},0),IFNULL(#{productDetail},''),IFNULL(#{productCount},0),'Y',now(), #{createUserSeq}, '', IFNULL(#{isGlass},'F'), 'Y' from TB_PRODUCT
+	</insert>-->
+	<select id="getProductCode" resultType="int">
+		SELECT MAX(SEQ) + 1
+		FROM TB_PRODUCT P
+	</select>
+	<insert id="insertProduct" parameterType="kr.co.ubcn.multivm.model.Product">
+		INSERT INTO TB_PRODUCT
+		(SEQ, COMPANY_SEQ, ORGANIZATION_SEQ, CODE, NAME, PRODUCT_PRICE, PRODUCT_DETAIL, PRODUCT_COUNT, USE_YN, CREATE_DATE, CREATE_USER_SEQ,MODIFY_DATE, PRODUCT_IMAGE, IS_GLASS, VISIBLE, IMG_CODE)
+		VALUES(#{productSeq}
+			  ,#{companySeq},#{organizationSeq},IF(#{productCode}='',#{productSeq},#{productCode}),#{productName},IFNULL(#{productPrice},0),IFNULL(#{productDetail},''),IFNULL(#{productCount},0),'Y',now(), #{createUserSeq},now()
+			  ,IF(#{productImage}='http://devmultivm.ubcn.co.kr/image/product/default.png',null,#{productImage}), IFNULL(#{isGlass},'F'), 'Y',#{imgCode})
+	</insert>
+
+	<!--<insert id="insertProduct" parameterType="kr.co.ubcn.multivm.model.Product">
+		INSERT INTO TB_PRODUCT
+		(SEQ, COMPANY_SEQ, ORGANIZATION_SEQ, CODE, NAME, PRODUCT_PRICE, PRODUCT_DETAIL, PRODUCT_COUNT, USE_YN, CREATE_DATE, CREATE_USER_SEQ,MODIFY_DATE, PRODUCT_IMAGE, IS_GLASS, VISIBLE)
+		VALUES(NEXTVAL(SQ_PRODUCT)
+			 ,#{companySeq},#{organizationSeq},IFNULL(UPPER(#{productCode}),LASTVAL(SQ_PRODUCT)),#{productName},IFNULL(#{productPrice},0),IFNULL(#{productDetail},''),IFNULL(#{productCount},0),'Y',now(), #{createUserSeq},now(), '', IFNULL(#{isGlass},'F'), 'Y' )
+	</insert>-->
+
+
+<!--	copy -->
+	<select id="isHasCodeProductImg" parameterType="kr.co.ubcn.multivm.model.Product" resultMap="ProductModel">
+		SELECT CASE WHEN COUNT(*) = 0 THEN 0 ELSE SEQ END AS SEQ, SUBSTRING_INDEX(PRODUCT_IMAGE,'/',-1) AS PRODUCT_IMAGE
+		FROM TB_PRODUCT
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('')">
+		AND COMPANY_SEQ = #{companySeq}
+		</if>
+		AND ORGANIZATION_SEQ = #{organizationSeq}
+		AND IMG_CODE = #{imgCode}
+		<if test="productSeq!=0">
+			AND SEQ NOT IN (#{productSeq})
+		</if>
+		AND VISIBLE = 'Y'
+	</select>
+
+	<select id="isHasCodeProductName" parameterType="java.util.Map" resultType="String">
+		SELECT NAME FROM TB_PRODUCT
+		WHERE COMPANY_SEQ = #{companySeq}
+		AND ORGANIZATION_SEQ= #{organizationSeq}
+		AND (CODE) IN(
+		SELECT CODE FROM TB_PRODUCT
+		WHERE seq IN
+		<foreach collection="productSeqArray" item="type" open="(" close=")" separator=",">
+			#{type.value}
+		</foreach>
+		)
+	</select>
+	<select id="isHasCodeProduct" parameterType="kr.co.ubcn.multivm.model.Product" resultType="int">
+		SELECT COUNT(*) FROM TB_PRODUCT
+		WHERE COMPANY_SEQ = #{companySeq}
+		AND ORGANIZATION_SEQ= #{organizationSeq}
+		AND CODE = #{productCode}
+		AND seq <![CDATA[<>]]> #{productSeq}
+		AND VISIBLE = 'Y'
+	</select>
+	<select id="isHasCodeProductCode" parameterType="java.util.Map" resultType="String">
+		SELECT CODE FROM TB_PRODUCT
+		WHERE COMPANY_SEQ = #{companySeq}
+		AND ORGANIZATION_SEQ= #{organizationSeq}
+		AND (CODE) IN(
+		SELECT CODE FROM TB_PRODUCT
+		WHERE seq IN
+		<foreach collection="productSeqArray" item="type" open="(" close=")" separator=",">
+			#{type.value}
+		</foreach>
+		)
+		<if test="visible!=null and !visible.equals('')">
+		AND VISIBLE = #{visible}
+		</if>
+		ORDER BY CODE
+	</select>
+	<select id="getMasterProduct" parameterType="java.util.Map" resultMap="ProductModel">
+		SELECT P.SEQ ,P.COMPANY_SEQ ,P.ORGANIZATION_SEQ ,P.CODE ,IFNULL(P.NAME,'') AS NAME
+		<choose>
+			<when test="check!=null and !check.equals('') and vmPrice!=null and !vmPrice.equals('') and vmPrice==1">
+				,VMP.PRODUCT_PRICE
+			</when>
+			<otherwise>
+				,P.PRODUCT_PRICE
+			</otherwise>
+		</choose>
+		,P.PRODUCT_DETAIL ,P.PRODUCT_COUNT ,IFNULL(P.USE_YN,'Y') ,P.CREATE_DATE ,P.CREATE_USER_SEQ ,P.MODIFY_DATE ,P.MODIFY_USER_SEQ
+		     ,CASE WHEN P.PRODUCT_IMAGE IS NULL OR P.PRODUCT_IMAGE like '%기본이미지_%' THEN 'http://devmultivm.ubcn.co.kr/image/product/default.png'
+		     ELSE P.PRODUCT_IMAGE END AS PRODUCT_IMAGE
+		     ,IFNULL(P.IS_GLASS,'F') AS IS_GLASS,P.VISIBLE ,P.EVENT_SEQ
+			<if test="check!=null and !check.equals('')">
+				,VMP.PRODUCT_PRICE AS PRE_PRICE
+			</if>
+		FROM TB_PRODUCT P
+		<if test="check!=null and !check.equals('')">
+		INNER JOIN TB_VENDING_MACHINE_PRODUCT VMP ON VMP.VM_SEQ = #{vmSeq} AND P.CODE = VMP.PRODUCT_CODE
+		</if>
+		WHERE P.COMPANY_SEQ = #{companySeq}
+		AND P.ORGANIZATION_SEQ = #{organizationSeq}
+		<if test="productCode!=null and !productCode.equals('')">
+		AND P.CODE = #{productCode}
+		</if>
+		AND P.VISIBLE = 'Y'
+		ORDER BY P.CODE
+	</select>
+
+	<update id="deleteProduct_v2" parameterType="kr.co.ubcn.multivm.model.Product">
+		UPDATE TB_PRODUCT
+		SET
+			VISIBLE = 'N',
+			MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{productSeq}
+		  AND VISIBLE = 'Y'
+	</update>
+
+	<update id="deletedProduct_up_v2" parameterType="kr.co.ubcn.multivm.model.Product">
+		UPDATE TB_PRODUCT
+		SET
+			VISIBLE = 'Y'
+			,NAME=#{productName},PRODUCT_COUNT=#{productCount}
+		    ,PRODUCT_PRICE=#{productPrice},PRODUCT_DETAIL=#{productDetail},IS_GLASS=#{isGlass}
+		    ,PRODUCT_IMAGE=#{productImage},USE_YN = 'Y'
+			,MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE CODE = #{productCode} AND COMPANY_SEQ = #{companySeq} AND ORGANIZATION_SEQ = #{organizationSeq}
+	</update>
+
+	<select id="getProductImageList" parameterType="kr.co.ubcn.multivm.model.Product" resultMap="ProductModel">
+		SELECT distinct PRODUCT_IMAGE, NAME  from TB_PRODUCT
+		WHERE 1=1
+		<if test="productName!=null and !productName.equals('')">
+			AND NAME like CONCAT('%', #{productName}'%')
+		</if>
+		ORDER BY NAME
+		LIMIT 500
+	</select>
+
+
+
+
+</mapper>

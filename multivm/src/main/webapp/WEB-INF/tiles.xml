@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE tiles-definitions PUBLIC
+		"-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+		"http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<tiles-definitions>
+	<!-- baseLayout : 공통 레이아웃의 뷰 이름 -->
+	<!-- template : 전체 레이아웃을 정하는 JSP의 위치 지정 -->
+	<!-- main -->
+	<definition name="baseLayout"
+				template="/WEB-INF/views/common/layout.jsp">
+		<put-attribute name="header"
+					   value="/WEB-INF/views/common/header.jsp" />
+		<put-attribute name="left-nav"
+					   value="/WEB-INF/views/common/left-nav.jsp" />
+		<put-attribute name="content" value=""/>
+	</definition>
+
+	<!-- 메인 화면의 뷰 이름 지정 / extends: 기본적인 레이아웃은 baseLayout을 상속받음을 표시 -->
+	<!--<definition name="main" extends="baseLayout">
+		&lt;!&ndash; 레이아웃의 제목에 표시할 구문 지정 &ndash;&gt;
+		<put-attribute name="title" value="메인페이지" />
+		&lt;!&ndash; 레이아웃의 본문에 표시할 JSP 지정 &ndash;&gt;
+		<put-attribute name="body"
+					   value="/WEB-INF/views/main.jsp" />
+	</definition>-->
+	<definition name="product/*" extends="baseLayout">
+		<put-attribute name="content" value="/WEB-INF/views/product/{1}.jsp" />
+	</definition>
+	<definition name="error/*" extends="baseLayout">
+		<put-attribute name="content" value="/WEB-INF/views/error/{1}.jsp" />
+	</definition>
+	<definition name="company/*" extends="baseLayout">
+		<put-attribute name="content" value="/WEB-INF/views/company/{1}.jsp" />
+	</definition>
+	<definition name="sales/*" extends="baseLayout">
+		<put-attribute name="content" value="/WEB-INF/views/sales/{1}.jsp" />
+	</definition>
+	<definition name="board/*" extends="baseLayout">
+		<put-attribute name="content" value="/WEB-INF/views/board/{1}.jsp" />
+	</definition>
+	<definition name="customer/*" extends="baseLayout">
+		<put-attribute name="content" value="/WEB-INF/views/customer/{1}.jsp" />
+	</definition>
+	<definition name="admin/*" extends="baseLayout">
+		<put-attribute name="content" value="/WEB-INF/views/admin/{1}.jsp" />
+	</definition>
+
+</tiles-definitions>

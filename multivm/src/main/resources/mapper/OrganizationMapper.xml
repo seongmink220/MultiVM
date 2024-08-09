@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.ubcn.multivm.mapper.OrganizationMapper">
+	<resultMap type="kr.co.ubcn.multivm.model.Organization" id="OrganizationModel" autoMapping="true">
+		<result property="seq" column="SEQ"/>
+		<result property="organizationSeq" column="ORGANIZATION_SEQ"/>
+		<result property="organizationName" column="ORGANIZATION_NAME"/>
+		<result property="companySeq" column="COMPANY_SEQ"/>
+		<result property="companyName" column="COMPANY_NAME"/>
+		<result property="name" column="NAME"/>
+		<result property="depth" column="DEPTH"/>
+		<result property="parentSeq" column="PARENT_SEQ"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="createUserSeq" column="CREATE_USER_SEQ"/>
+		<result property="modifyDate" column="MODIFY_DATE"/>
+		<result property="modifyUserSeq" column="MODIFY_USER_SEQ"/>
+		<result property="visible" column="VISIBLE"/>
+	</resultMap>
+
+	<!--<select id="getOneUserList" parameterType="String" resultMap="UserModel">
+        SELECT P.CODE PRODUCT_CODE, P.NAME PRODUCT_NAME, VMP.PRODUCT_PRICE, VMP.PRODUCT_COUNT, IFNULL(VMP.SLOT_NO, 0) SLOT_NO
+        FROM TB_VENDING_MACHINE_PRODUCT VMP
+        LEFT OUTER JOIN TB_VENDING_MACHINE VM
+        ON(VMP.VM_SEQ = VM.SEQ)
+        LEFT OUTER JOIN TB_PRODUCT P
+        ON(P.COMPANY_SEQ = VM.COMPANY_SEQ AND VMP.PRODUCT_CODE = P.CODE)
+        WHERE VM.VM_ID = #{vmId}
+    </select>-->
+
+	<select id="getOrganizationInfo" parameterType="kr.co.ubcn.multivm.model.User" resultMap="OrganizationModel">
+		SELECT ORG.*, COM.NAME AS COMPANY_NAME, ORG.SEQ AS ORGANIZATION_SEQ
+		FROM TB_ORGANIZATION ORG
+		INNER JOIN TB_COMPANY COM
+		ON COM.SEQ = ORG.COMPANY_SEQ
+		WHERE 1=1
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+		AND ORG.SEQ = #{organizationSeq}
+		</if>
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+		AND ORG.COMPANY_SEQ = #{companySeq}
+		</if>
+		AND ORG.VISIBLE = 'Y'
+	</select>
+	<select id="getOrganizationList" parameterType="java.util.Map" resultMap="OrganizationModel">
+		SELECT org.*, com.NAME AS COMPANY_NAME
+		FROM TB_ORGANIZATION org
+		INNER JOIN TB_COMPANY com ON com.SEQ = org.COMPANY_SEQ
+		WHERE 1=1
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+			AND org.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="organizationSeq2!=null and !organizationSeq2.equals('') and organizationSeq2!=0">
+			AND org.COMPANY_SEQ = (SELECT COMPANY_SEQ FROM TB_ORGANIZATION WHERE SEQ = #{organizationSeq2})
+		</if>
+		<if test="organizationSeq!=null and !organizationSeq.equals('')">
+			AND org.SEQ = #{organizationSeq}
+		</if>
+		<if test="auth!=null and !auth.equals('') and auth==4">
+			AND org.SEQ IN (SELECT ORGANIZATION_SEQ FROM TB_VENDING_MACHINE WHERE USER_SEQ = #{userSeq} UNION SELECT ORGANIZATION_SEQ FROM TB_USER WHERE seq = #{userSeq})
+		</if>
+		AND org.VISIBLE = 'Y'
+		ORDER BY org.NAME
+	</select>
+
+
+	<select id="getDefaultOrig" parameterType="kr.co.ubcn.multivm.model.User" resultMap="OrganizationModel">
+		SELECT * FROM TB_ORGANIZATION
+		WHERE COMPANY_SEQ = #{companySeq}
+			AND SEQ NOT IN (#{organizationSeq})
+		AND VISIBLE = 'Y'
+		ORDER BY NAME
+	</select>
+
+	<select id="getDefaultOrig2" parameterType="java.util.Map" resultMap="OrganizationModel">
+		SELECT * FROM TB_ORGANIZATION
+		WHERE COMPANY_SEQ = #{companySeq}
+		<if test="notIn!=null and !notIn.equals('')">
+		  AND SEQ NOT IN (#{organizationSeq})
+		</if>
+		  AND VISIBLE = 'Y'
+		ORDER BY NAME
+	</select>
+
+	<insert id="insertOrg" parameterType="kr.co.ubcn.multivm.model.Organization">
+		INSERT INTO TB_ORGANIZATION
+		(SEQ, COMPANY_SEQ, NAME, CREATE_DATE,CREATE_USER_SEQ)
+		select case count(*) when 0 then 1 else max(seq) + 1 END
+			 ,#{companySeq},#{name},now(), #{createUserSeq} from TB_ORGANIZATION
+	</insert>
+
+	<update id="modifyOrg" parameterType="kr.co.ubcn.multivm.model.Organization">
+		UPDATE TB_ORGANIZATION
+		SET NAME=#{name}
+		  , MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{seq}
+	</update>
+
+	<delete id="deleteOrg" parameterType="java.util.Map">
+		DELETE FROM TB_ORGANIZATION
+		WHERE 1=1
+		<if test="organizationSeq!=null and !organizationSeq.equals('')">
+		AND SEQ = #{organizationSeq}
+		</if>
+		<if test="companySeq!=null and !companySeq.equals('')">
+		AND COMPANY_SEQ = #{companySeq}
+		</if>
+	</delete>
+
+	<update id="deleteOrg_v2" parameterType="java.util.Map">
+		UPDATE TB_ORGANIZATION
+		SET VISIBLE = 'N'
+		  , MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{organizationSeq}
+	</update>
+
+	<select id="checkDupOrgName" parameterType="kr.co.ubcn.multivm.model.Organization" resultMap="OrganizationModel">
+		SELECT *
+		FROM TB_ORGANIZATION
+		WHERE NAME = #{name}
+		AND COMPANY_SEQ = #{companySeq}
+		AND VISIBLE = 'Y'
+	</select>
+
+	<select id="getOrgOfComList" parameterType="java.util.Map" resultMap="OrganizationModel">
+		SELECT DISTINCT ORG.*, COM.NAME AS COMPANY_NAME, ORG.SEQ AS ORGANIZATION_SEQ, ORG.NAME AS ORGANIZATION_NAME
+		FROM TB_ORGANIZATION ORG
+		INNER JOIN TB_COMPANY COM
+		ON COM.SEQ = ORG.COMPANY_SEQ
+		LEFT JOIN TB_VENDING_MACHINE VM
+		ON ORG.SEQ = VM.ORGANIZATION_SEQ AND VM.VISIBLE = 'Y'
+		WHERE 1=1
+		<if test="organizationSeq!=null and !organizationSeq.equals('') and organizationSeq!=0">
+			AND ORG.COMPANY_SEQ = (SELECT COMPANY_SEQ FROM TB_ORGANIZATION WHERE SEQ = #{organizationSeq})
+		</if>
+		<if test="companySeq!=null and !companySeq.equals('') and companySeq!=0">
+			AND ORG.COMPANY_SEQ = #{companySeq}
+		</if>
+		<if test="vmSeq!=null and !vmSeq.equals('') and vmSeq!=0">
+			AND ORG.COMPANY_SEQ = (SELECT COMPANY_SEQ FROM TB_VENDING_MACHINE WHERE SEQ = #{vmSeq})
+		</if>
+		<if test="userSeq!=null and !userSeq.equals('') and userSeq!=0">
+			AND ORG.COMPANY_SEQ = (SELECT COMPANY_SEQ FROM TB_USER WHERE SEQ = #{userSeq})
+		</if>
+		<if test="organizationSeq2!=null and !organizationSeq2.equals('') and organizationSeq2!=0">
+			AND ORG.SEQ = #{organizationSeq2}
+		</if>
+		AND ORG.VISIBLE = 'Y'
+		ORDER BY NAME
+	</select>
+
+	<delete id="deleteEventOfOrg" parameterType="java.util.Map">
+		DELETE FROM TB_EVENT
+		WHERE ORGANIZATION_SEQ = #{seq}
+	</delete>
+</mapper>
+
