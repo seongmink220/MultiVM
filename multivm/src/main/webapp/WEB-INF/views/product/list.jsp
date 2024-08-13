@@ -193,6 +193,8 @@
                                         alert('xlsx, xls 파일이 아닙니다.');
                                         return false;
                                     }
+
+
                                 } else {
                                     var filename = $(this).val().split('/').pop().split('\\').pop();
                                 }
@@ -788,7 +790,13 @@
         var productImage_up =$("#product_image")[0].files[0];
         //2022-03-30. 파손여부 추가
 
-        if(productCode!=productCode.toUpperCase()){
+        var codePattern = /^F\d{10}$/;
+        if (codePattern.test(productCode)) {
+            alert("F로 시작하는 11자리 상품코드는 등록할 수 없습니다.");
+            return false;
+        }
+
+        if(productCode!=productCode.toUpperCase()) {
             alert('상품코드는 대문자만 가능합니다.');
             return false;
         }
@@ -1045,6 +1053,26 @@
             workBook.SheetNames.forEach(function (sheetName) {
                 console.log('SheetName: ' + sheetName);
                 var rows = XLSX.utils.sheet_to_json(workBook.Sheets[sheetName],{header:['no', 'productCode', 'productName','productPrice','productDetail','productCount','isGlass','imgCode'],range:1});
+
+                // 20240812 - 김성민 : 필터링 조건에 해당하는 항목이 있는지 확인
+                rows.forEach(function (row) {
+                    if (/^F\d{10}$/.test(row.productCode)) {
+                        alert("상품코드가 'F'로 시작하는 11자리 문자열을 포함하고 있습니다. 파일을 다시 선택해주세요.");
+
+                        validFile = false;  // 파일 유효성을 false로 설정
+
+                        return; // 함수 종료
+                    }
+                });
+
+                if (!validFile) {
+                    var fileTarget = $('.filebox .upload-hidden');
+
+                    $('#file_excel').val('');   // 선택된 파일을 제거합니다
+                    fileTarget.siblings('.upload-name').val("선택된 파일 없음");
+                    return; // 파일 유효하지 않을 경우 전체 함수 종료
+                }
+
                 rows.push({"companySeq":companySeq,"organizationSeq":organizationSeq,"productName":"ubcn11111"});
                 console.log(JSON.stringify(rows));
                 ajaxExcelData=JSON.stringify(rows);
