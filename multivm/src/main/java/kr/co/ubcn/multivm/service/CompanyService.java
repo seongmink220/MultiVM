@@ -7,6 +7,7 @@ import kr.co.ubcn.multivm.util.SFTPUtil;
 import kr.co.ubcn.multivm.util.SHA256;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.ibatis.jdbc.Null;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -450,12 +452,14 @@ public class CompanyService {
     }
 
     @Transactional
-    public int insertAdv(Adv adv, MultipartFile file, String[] org) throws NoSuchAlgorithmException, IOException {
+    public int insertAdv(Adv adv, MultipartFile file, String[] org) {
         int result = 0;
         String orgFileName = EmojiParser.removeAllEmojis(file.getOriginalFilename());
         //파일저장
         //String localtest ="D:/logs/";
         try {
+            if(isHEVCAdvertising(file)){ return 400; }  // 코덱 파일일 유효성 검사
+
             sftpUtil.init();
             sftpUtil.mkdir(adv_path);
 
@@ -564,6 +568,32 @@ public class CompanyService {
             System.out.println("이벤트삭제 error : "+e);
         }
         return "삭제되었습니다.";
+    }
+
+    // 20240812 - 김성민 : 광고 등록시 코덱방식 파일 업로드 불가 유효성검사
+    public boolean isHEVCAdvertising(MultipartFile multipartFile) throws IOException {
+
+        try (InputStream checkFile = multipartFile.getInputStream()){
+            try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(checkFile)) {
+                grabber.start();
+                String codecName = grabber.getVideoCodecName();
+                grabber.stop();
+
+                System.err.println("requestFile codecName: " + codecName);
+                // H.265 코덱 확인
+                if (codecName != null && codecName.contains("hevc")) {
+                    System.out.println("H.265(HEVC) 코덱을 사용하는 파일입니다. 업로드 불가능 합니다.");
+                    return true;
+                } else {
+                    System.out.println("파일은 H.265(HEVC) 코덱을 사용하지 않습니다. 업로드 가능 합니다.");
+                    return false;
+                }
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
     }
 
 }

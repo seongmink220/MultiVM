@@ -500,14 +500,21 @@ public class CompanyController {
         return (count>0?"추가되었습니다.":"에러발생");
     }
     @PostMapping("/ajax/insertAdv.do")
-    public String ajaxInsertAdv(@RequestParam Map<String, Object> param, @RequestPart(value = "upload_advfile", required = false) MultipartFile file,Adv adv, HttpSession session) throws NoSuchAlgorithmException, IOException {
+    public String ajaxInsertAdv(@RequestParam Map<String, Object> param, @RequestPart(value = "upload_advfile", required = false) MultipartFile file, Adv adv, HttpSession session) throws NoSuchAlgorithmException, IOException {
+
         //System.out.println("ajaxInsertAdv 컨트롤러 : "+adv);
         String[] organizationSeq = param.get("array_organizationSeq").toString().split(",");
         adv.setCreateUserSeq((Integer) session.getAttribute("userSeq"));
         adv.setModifyUserSeq((Integer) session.getAttribute("userSeq"));
         //System.out.println(organizationSeq+"dd "+organizationSeq.length);
-        int result = 0;
-        return (companyService.insertAdv(adv, file, organizationSeq)>0?"적용되었습니다.":"에러발생");
+
+        int result = companyService.insertAdv(adv, file, organizationSeq);
+        if(result == 400){
+            return "H.265(HEVC) 코덱 파일은 지원하지 않습니다.";
+        } else if(result < 0){
+            return "에러발생";
+        }
+        return "적용되었습니다.";
     }
     /*@GetMapping("/ajax/deleteSelectedAdvVM.do")
     public String ajaxDeleteSelectedAdvVM(@RequestParam(value="deleteList[]") List<Integer> deleteList, HttpSession session){

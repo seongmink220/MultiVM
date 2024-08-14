@@ -17,6 +17,23 @@
 	<properties>
 		<java.version>1.8</java.version>
 	</properties>
+
+<!--	20240813 - 김성민 : 파일 타입 조회 -->
+	<repositories>
+<!--				<repository>-->
+<!--					<id>bytedeco</id>-->
+<!--					<url>https://repo.bytedeco.org</url>-->
+<!--				</repository>-->
+<!--		<repository>-->
+<!--			<id>bytedeco</id>-->
+<!--			<url>https://repo.maven.apache.org/maven2/</url>-->
+<!--		</repository>-->
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
+	</repositories>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -172,11 +189,50 @@
 			<version>5.1.1</version>
 		</dependency>
 
+<!--		20240813 - 김성민 : 파일 정보 읽음-->
+		<!-- JavaCV dependency -->
+		<dependency>
+			<groupId>org.bytedeco</groupId>
+			<artifactId>javacv</artifactId>
+			<version>1.5.9</version>
+		</dependency>
 
+		<!-- FFmpeg platform dependency -->
+		<dependency>
+			<groupId>org.bytedeco</groupId>
+			<artifactId>ffmpeg-platform</artifactId>
+			<version>6.0-1.5.9</version>
+		</dependency>
+
+		<!-- (Optional) OpenCV platform dependency if needed -->
+		<dependency>
+			<groupId>org.bytedeco</groupId>
+			<artifactId>opencv-platform</artifactId>
+			<version>4.7.0-1.5.9</version>
+		</dependency>
+
+		<!-- OpenBLAS platform dependency -->
+		<dependency>
+			<groupId>org.bytedeco</groupId>
+			<artifactId>openblas-platform</artifactId>
+			<version>0.3.6-1.5.1</version>
+		</dependency>
+
+		<!-- Leptonica platform dependency -->
+		<dependency>
+			<groupId>org.bytedeco</groupId>
+			<artifactId>leptonica-platform</artifactId>
+			<version>1.83.0-1.5.9</version>
+		</dependency>
+
+		<!-- JavaCPP dependency -->
+		<dependency>
+			<groupId>org.bytedeco</groupId>
+			<artifactId>javacpp</artifactId>
+			<version>1.5.9</version>
+		</dependency>
 
 	</dependencies>
-
-
 
 	<build>
 		<plugins>
