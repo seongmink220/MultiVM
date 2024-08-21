@@ -250,7 +250,12 @@
 		ORDER BY ORGANIZATION_NANE, VM_ID, AD.SEQ DESC
 	</select>
 
-
-
+<!--	20240814 - 김성민 : 광고 수정(파일 수정x)-->
+	<update id="updateAdv" parameterType="kr.co.ubcn.multivm.model.Adv">
+		UPDATE TB_ADV
+		SET ADV_TITLE=#{advTitle}, ADV_CONTENT=#{advContent}, ADV_OWNER=#{advOwner}, ADV_FILE=#{advFile}, ADV_TYPE=#{advType}
+		  , MODIFY_USER_SEQ=#{modifyUserSeq}, MODIFY_DATE=now()
+		WHERE SEQ = #{seq}
+	</update>
 
 </mapper>

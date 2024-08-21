@@ -180,9 +180,8 @@ public class ProductController {
 		map.put("organizationSeq",request.getParameter("organizationSeq"));
 		map.put("vmSeq",request.getParameter("vmSeq"));
 		map.put("productCode",request.getParameter("productCode"));
-		//System.out.println("dddd: "+map);
-		//System.out.println("selectVMProduct 컨트롤러"+vendingMachineProductMapper.getVMProductInfo(map));
-		//System.out.println("selectVMProduct 컨트롤러  "+vendingMachineProductMapper.getVMProductInfo(map));
+		System.out.println("dddd: "+map);
+		System.out.println("selectVMProduct 컨트롤러"+vendingMachineProductMapper.getVMProductInfo(map));
 		return vendingMachineProductMapper.getVMProductInfo(map);
 	}
 	@PostMapping("/ajax/modifyVMProduct.do")

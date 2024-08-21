@@ -454,7 +454,21 @@ public class CompanyService {
     @Transactional
     public int insertAdv(Adv adv, MultipartFile file, String[] org) {
         int result = 0;
-        String orgFileName = EmojiParser.removeAllEmojis(file.getOriginalFilename());
+
+//        System.out.println("insertAdv file == " + file);
+//        System.out.println("insertAdv adv == " + adv);
+        if(file == null){
+//            System.out.println("file == null");
+            result = advMapper.updateAdv(adv);
+//            System.out.println("result == " + result);
+            return result;
+        }
+
+        String orgFileName = null;
+        if(file != null){
+            orgFileName = EmojiParser.removeAllEmojis(file.getOriginalFilename());
+        }
+
         //파일저장
         //String localtest ="D:/logs/";
         try {
@@ -581,11 +595,11 @@ public class CompanyService {
 
                 System.err.println("requestFile codecName: " + codecName);
                 // H.265 코덱 확인
-                if (codecName != null && codecName.contains("hevc")) {
-                    System.out.println("H.265(HEVC) 코덱을 사용하는 파일입니다. 업로드 불가능 합니다.");
+                if (codecName.contains("hevc") || codecName.contains("h265")) {
+                    System.out.println("H.265 (HEVC) 코덱을 사용하는 파일입니다. 업로드 불가능 합니다.");
                     return true;
                 } else {
-                    System.out.println("파일은 H.265(HEVC) 코덱을 사용하지 않습니다. 업로드 가능 합니다.");
+                    System.out.println("파일은 H.265 (HEVC) 코덱을 사용하지 않습니다. 업로드 가능 합니다.");
                     return false;
                 }
             }

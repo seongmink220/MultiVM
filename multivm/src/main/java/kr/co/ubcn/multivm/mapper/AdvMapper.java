@@ -24,5 +24,5 @@ public interface AdvMapper {
     public List<VendingMachineAdv> checkDupAdv(VendingMachineAdv vendingMachineAdv);
     public String checkUseAdvFile(int seq);
 
-
+    public int updateAdv(Adv adv);
 }

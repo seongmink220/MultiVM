@@ -510,7 +510,7 @@ public class CompanyController {
 
         int result = companyService.insertAdv(adv, file, organizationSeq);
         if(result == 400){
-            return "H.265(HEVC) 코덱 파일은 지원하지 않습니다.";
+            return "H.265 (HEVC) 코덱 파일은 지원하지 않습니다.";
         } else if(result < 0){
             return "에러발생";
         }

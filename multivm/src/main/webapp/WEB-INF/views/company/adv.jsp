@@ -425,7 +425,7 @@
                                                 <td onclick="detailAdvModal(${advList.seq});">${advList.seq}</td>
                                                 <td onclick="detailAdvModal(${advList.seq});" class="">${advList.advTitle}</td>
                                                 <td onclick="detailAdvModal(${advList.seq});" class="">${advList.organizationName}/${advList.advOwner}</td>
-                                                <td onclick="detailAdvModal(${advList.seq});" class="t_left"><c:choose><c:when test="${advList.advType eq 'V'}">세로형</c:when><c:otherwise>세로형</c:otherwise></c:choose></td>
+                                                <td onclick="detailAdvModal(${advList.seq});" class="t_left"><c:choose><c:when test="${advList.advType eq 'H'}">가로형</c:when><c:when test="${advList.advType eq 'V'}">세로형</c:when><c:otherwise>알 수 없음</c:otherwise></c:choose></td>
                                             </tr>
                                         </c:forEach>
                                 </tbody>
@@ -1136,6 +1136,16 @@
         //form.append("upload_advfile", $("#adv_file")[0].files[0]);
         FunLoadingBarStart();
 
+        // console.log("companySeq == " + companySeq);
+        // console.log("organizationSeq == " + organizationSeq);
+        // console.log("advTitle == " + advTitle);
+        // console.log("advOwner == " + advOwner);
+        // console.log("advContent == " + advContent);
+        // console.log("advSeq == " + advSeq);
+        // console.log("advType == " + advType);
+        // console.log("$(#adv_file)[0].files[0] == " + $("#adv_file"));
+        // console.log("$(.upload-name).val() == " + $(".upload-name").val());
+
         $.ajax({
             url:'${root}/company/ajax/insertAdv.do',
             data: form,
@@ -1148,6 +1158,9 @@
                 $('#modal_pop').stop().fadeOut();
                 $('.pop_box').stop().fadeOut();
                 $('#shadow_bg').stop().fadeOut();
+                $("#company-select1").val(companySeq).trigger("change");
+
+
                 changeAdvSelect1();
                 //location.reload();
                 //$('.input01').children('.ez-checkbox').eq(0).attr("class","");
@@ -1301,6 +1314,7 @@
         document.getElementById("video_obj").play();*/
     }//완
     function modifyAdvModal(){ //체크한거
+        $("#adv_file").val('');
         var sizeCheck = $('#Dash_Table_Body1 input[type="checkbox"]:checked');
         if(sizeCheck.length == 0||sizeCheck.length > 1){
             alert("수정할 광고 한개만 선택해주세요"); return false;
@@ -1309,6 +1323,8 @@
             $.each(sizeCheck,function(idex,entry){
                 advList.push(entry.closest('tr').id);
             });
+
+            // alert("advList == " + advList);
             $.ajax({
                 url:'${root}/company/ajax/getAdvInfo.do',
                 type : 'POST',
